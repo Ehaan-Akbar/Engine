@@ -1,0 +1,359 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Libraries">
+      <UniqueIdentifier>{7e8847ce-b24d-4350-a7ae-7a24b1783ebe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Scripts">
+      <UniqueIdentifier>{4404dc90-e4b4-43b2-9fc6-e976123667be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shaders">
+      <UniqueIdentifier>{014e6ff4-47a1-425e-86ca-b35e652f6c8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Libraries\VkBootstrap">
+      <UniqueIdentifier>{41d41be0-3645-40d9-8b91-da6dee8223af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Libraries\Vulkan Memory Allocator">
+      <UniqueIdentifier>{2b3bd881-dfb0-440c-bd64-36b8a2ea07e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan">
+      <UniqueIdentifier>{e558dd9f-cb4b-4567-80ec-e44b0865cee9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Initialization">
+      <UniqueIdentifier>{1e7b16bd-f627-498c-8795-887c8828630d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Initialization\Window">
+      <UniqueIdentifier>{d6752d75-d03d-426f-a0dd-ea75fbd1767c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Initialization\Instance">
+      <UniqueIdentifier>{03098505-26e7-4939-b4bc-cfb793f1ee54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Initialization\Surface">
+      <UniqueIdentifier>{52955c92-b5a6-4106-9d7d-995952362027}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Initialization\Device">
+      <UniqueIdentifier>{deeaf19e-a895-4e5d-a306-1040ff30e286}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Initialization\Swapchain">
+      <UniqueIdentifier>{2ce42dab-43f1-47d7-a43e-4f3f6f7a1025}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions">
+      <UniqueIdentifier>{3bdf408f-17e3-4030-b01f-eeb36160328f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\CommandPool">
+      <UniqueIdentifier>{7371d51c-1b52-4bd0-9b79-e5ec5bb271c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\CommandBuffer">
+      <UniqueIdentifier>{adf9261d-4a48-4c17-b753-5cc3748cddb5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\Framebuffer">
+      <UniqueIdentifier>{0b5c0d0a-7cca-4723-9700-d97f21261f8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\Buffer">
+      <UniqueIdentifier>{590b6246-c598-4470-acbe-b6a0a282c8a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine">
+      <UniqueIdentifier>{f49daa98-0286-456d-a782-63b22cd0d603}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Renderer">
+      <UniqueIdentifier>{0938fb05-c982-4b62-8e6a-e2ef9581ed84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\VulkanContext">
+      <UniqueIdentifier>{bb302167-ba43-45c3-a48e-7eebcaf69976}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\App">
+      <UniqueIdentifier>{df8d178c-1a0e-483e-95ba-b2e4c1303104}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\ECS">
+      <UniqueIdentifier>{06c6169b-3807-4ee8-a82e-862f9a2f8b04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\ECS\Entity">
+      <UniqueIdentifier>{88aff9c6-9005-47a0-a575-a098f501d7cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\ECS\Component">
+      <UniqueIdentifier>{3258a359-e349-49bd-bb97-6acb648d9d4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\ECS\System">
+      <UniqueIdentifier>{57b3255d-b93f-4e99-b72d-b51390580985}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\Buffer\IndexBuffer">
+      <UniqueIdentifier>{8ba71445-953c-4831-bd25-2febd8cda15f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\Buffer\VertexBuffer">
+      <UniqueIdentifier>{e1bb7683-5545-47a9-89e0-b363ba5fda79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\Buffer\UniformBuffer">
+      <UniqueIdentifier>{3cd27040-1c57-4f5e-862a-2534af8e8d46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Camera">
+      <UniqueIdentifier>{4968d018-f610-4866-8c08-d81fe1a5c0a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Input">
+      <UniqueIdentifier>{6d597a87-9a1b-4bf0-9fbd-5ce36f0b11c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Input\Controller">
+      <UniqueIdentifier>{634778e0-b124-4b02-a729-5e56a0e88fec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Libraries\TinyObjLoader">
+      <UniqueIdentifier>{a9a3f7f7-efbd-4750-85ce-6e6f2912bb2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\ECS\Component\Mesh">
+      <UniqueIdentifier>{1ed07bb4-9481-4526-b797-126808f81878}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\DescriptorSet">
+      <UniqueIdentifier>{da6c53ce-3d28-4c94-92ce-64f124431c22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\DescriptorPool">
+      <UniqueIdentifier>{984abb85-85fb-4340-9131-7a5b4f2d6395}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\DescriptorSetLayout">
+      <UniqueIdentifier>{6c30a166-2ed1-42ef-824b-d0171a6d25fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\RenderPass">
+      <UniqueIdentifier>{5c37e32a-dc89-4d5d-8ae9-8f84df1b92a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\Pipeline">
+      <UniqueIdentifier>{b5da5219-059e-46ec-974d-e158fd48d218}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\FraneGraph">
+      <UniqueIdentifier>{37c0e917-043b-4c28-820e-e151d773bd35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\Image">
+      <UniqueIdentifier>{30c6585f-aa06-43e8-9c17-a05fc4b9800e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="VkBootstrap.cpp">
+      <Filter>Source Files\Libraries\VkBootstrap</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Source Files\Vulkan\Initialization\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Instance.cpp">
+      <Filter>Source Files\Vulkan\Initialization\Instance</Filter>
+    </ClCompile>
+    <ClCompile Include="Surface.cpp">
+      <Filter>Source Files\Vulkan\Initialization\Surface</Filter>
+    </ClCompile>
+    <ClCompile Include="Device.cpp">
+      <Filter>Source Files\Vulkan\Initialization\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPass.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Swapchain.cpp">
+      <Filter>Source Files\Vulkan\Initialization\Swapchain</Filter>
+    </ClCompile>
+    <ClCompile Include="Pipeline.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandPool.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\CommandPool</Filter>
+    </ClCompile>
+    <ClCompile Include="Framebuffer.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\Framebuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandBuffer.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\CommandBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="VertexBuffer.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\Buffer\VertexBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="vk_mem_alloc.cpp">
+      <Filter>Source Files\Libraries\Vulkan Memory Allocator</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Source Files\Vulkan\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanContext.cpp">
+      <Filter>Source Files\Vulkan\VulkanContext</Filter>
+    </ClCompile>
+    <ClCompile Include="App.cpp">
+      <Filter>Source Files\App</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS.cpp">
+      <Filter>Source Files\Engine\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>Source Files\Engine\ECS\Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="Component.cpp">
+      <Filter>Source Files\Engine\ECS\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="System.cpp">
+      <Filter>Source Files\Engine\ECS\System</Filter>
+    </ClCompile>
+    <ClCompile Include="IndexBuffer.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\Buffer\IndexBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="UniformBuffer.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\Buffer\UniformBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files\Engine\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files\App</Filter>
+    </ClCompile>
+    <ClCompile Include="Controller.cpp">
+      <Filter>Source Files\Engine\Input\Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="tiny_obj_loader.cpp">
+      <Filter>Source Files\Libraries\TinyObjLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorSet.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\DescriptorSet</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorPool.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\DescriptorPool</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorSetLayout.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\DescriptorSetLayout</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameGraph.cpp">
+      <Filter>Source Files\Vulkan\FraneGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="Image.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\Image</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Helper.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VkBootstrap.h">
+      <Filter>Source Files\Libraries\VkBootstrap</Filter>
+    </ClInclude>
+    <ClInclude Include="VkBootstrapDispatch.h">
+      <Filter>Source Files\Libraries\VkBootstrap</Filter>
+    </ClInclude>
+    <ClInclude Include="vk_mem_alloc.h">
+      <Filter>Source Files\Libraries\Vulkan Memory Allocator</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>Source Files\Vulkan\Initialization\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Instance.h">
+      <Filter>Source Files\Vulkan\Initialization\Instance</Filter>
+    </ClInclude>
+    <ClInclude Include="Surface.h">
+      <Filter>Source Files\Vulkan\Initialization\Surface</Filter>
+    </ClInclude>
+    <ClInclude Include="Device.h">
+      <Filter>Source Files\Vulkan\Initialization\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPass.h">
+      <Filter>Source Files\Vulkan\Abstractions\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Swapchain.h">
+      <Filter>Source Files\Vulkan\Initialization\Swapchain</Filter>
+    </ClInclude>
+    <ClInclude Include="Pipeline.h">
+      <Filter>Source Files\Vulkan\Abstractions\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandPool.h">
+      <Filter>Source Files\Vulkan\Abstractions\CommandPool</Filter>
+    </ClInclude>
+    <ClInclude Include="Framebuffer.h">
+      <Filter>Source Files\Vulkan\Abstractions\Framebuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandBuffer.h">
+      <Filter>Source Files\Vulkan\Abstractions\CommandBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>Source Files\Vulkan\Abstractions\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexBuffer.h">
+      <Filter>Source Files\Vulkan\Abstractions\Buffer\VertexBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Source Files\Vulkan\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanContext.h">
+      <Filter>Source Files\Vulkan\VulkanContext</Filter>
+    </ClInclude>
+    <ClInclude Include="App.h">
+      <Filter>Source Files\App</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS.h">
+      <Filter>Source Files\Engine\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.h">
+      <Filter>Source Files\Engine\ECS\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Component.h">
+      <Filter>Source Files\Engine\ECS\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="System.h">
+      <Filter>Source Files\Engine\ECS\System</Filter>
+    </ClInclude>
+    <ClInclude Include="IndexBuffer.h">
+      <Filter>Source Files\Vulkan\Abstractions\Buffer\IndexBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="UniformBuffer.h">
+      <Filter>Source Files\Vulkan\Abstractions\Buffer\UniformBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Source Files\Engine\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Controller.h">
+      <Filter>Source Files\Engine\Input\Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="tiny_obj_loader.h">
+      <Filter>Source Files\Libraries\TinyObjLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorSet.h">
+      <Filter>Source Files\Vulkan\Abstractions\DescriptorSet</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorPool.h">
+      <Filter>Source Files\Vulkan\Abstractions\DescriptorPool</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorSetLayout.h">
+      <Filter>Source Files\Vulkan\Abstractions\DescriptorSetLayout</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameGraph.h">
+      <Filter>Source Files\Vulkan\FraneGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Image.h">
+      <Filter>Source Files\Vulkan\Abstractions\Image</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shader.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="shader.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="compile.bat">
+      <Filter>Resource Files\Scripts</Filter>
+    </None>
+    <None Include="render.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="render.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="blit.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="blit.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+  </ItemGroup>
+</Project>
