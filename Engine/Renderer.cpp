@@ -129,7 +129,9 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 
 
 	uint32_t currentVertexOffset = 0;
-	modelTransforms.clear();
+	uint32_t currentIndexOffset = 0;
+	drawInfos.clear();
+	drawInfos.reserve(ecs.getEntityCount());
 	batchedVertices.clear();
 	batchedIndices.clear();
 
@@ -137,13 +139,18 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 		const auto& t = ecs.getComponent<transform>(entity);
 		const auto& m = ecs.getComponent<mesh>(entity);
 
-		modelTransforms.push_back(t->transformationMatrix());
+		drawInfos.push_back({
+			.indexCount = static_cast<uint32_t>(m->indices->size()),
+			.firstIndex = currentIndexOffset,
+			.vertexOffset = currentVertexOffset,
+			.modelMatrix = t->transformationMatrix()
+		});
 		batchedVertices.insert(batchedVertices.end(), m->vertices->begin(), m->vertices->end());
 		for (size_t i = 0; i < m->indices->size(); ++i) {
 			batchedIndices.push_back((*m->indices)[i] + currentVertexOffset);
 		}
 		currentVertexOffset += m->vertices->size();
-
+		currentIndexOffset += m->indices->size();
 	});
 
 	if (!isMainVertexBufferInitialized) {
@@ -155,7 +162,7 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 	mainVertexBuffer.bind(commandBuffers[currentFrame].commandBuffer);
 	mainIndexBuffer.bind(commandBuffers[currentFrame].commandBuffer);
 
-	for (const auto& transform : modelTransforms) {
+	for (const auto& info : drawInfos) {
 
 		PushConstantMVP push{
 			.uboIndex = static_cast<uint32_t>(currentFrame),
@@ -163,7 +170,7 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 		};
 
 		UBO ubo{
-			.model = transform,
+			.model = info.modelMatrix,
 			.view = camera.getViewMatrix(),
 			.projection = camera.getProjectionMatrix(),
 			.lightPos = glm::vec4(4.0f, -3.0f, -4.0f, 0.0f),
@@ -174,7 +181,7 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 		uniformBuffers[currentFrame].copy(sizeof(ubo), &ubo);
 		
 		vkCmdPushConstants(commandBuffers[currentFrame].commandBuffer, renderedPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantMVP), &push);
-		vkCmdDrawIndexed(commandBuffers[currentFrame].commandBuffer, static_cast<uint32_t>(batchedIndices.size()), 1, 0, 0, 0);
+		vkCmdDrawIndexed(commandBuffers[currentFrame].commandBuffer, info.indexCount, 1, info.firstIndex, info.vertexOffset, 0);
 	}
 
 	vkCmdEndRenderPass(commandBuffers[currentFrame].commandBuffer);

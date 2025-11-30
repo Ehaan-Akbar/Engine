@@ -152,7 +152,14 @@ private:
 	std::vector<Vertex> batchedVertices;
 	std::vector<uint32_t> batchedIndices;
 
-	std::vector<glm::mat4> modelTransforms;
+	struct drawInfo {
+		uint32_t indexCount;
+		uint32_t firstIndex;
+		uint32_t vertexOffset;
+		glm::mat4 modelMatrix;
+	};
+
+	std::vector<drawInfo> drawInfos;
 
 };
 
