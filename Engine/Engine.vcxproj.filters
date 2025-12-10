@@ -127,11 +127,11 @@
     <Filter Include="Source Files\Vulkan\Abstractions\Pipeline">
       <UniqueIdentifier>{b5da5219-059e-46ec-974d-e158fd48d218}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Vulkan\FraneGraph">
-      <UniqueIdentifier>{37c0e917-043b-4c28-820e-e151d773bd35}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Vulkan\Abstractions\Image">
       <UniqueIdentifier>{30c6585f-aa06-43e8-9c17-a05fc4b9800e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\FrameGraph">
+      <UniqueIdentifier>{37c0e917-043b-4c28-820e-e151d773bd35}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -226,7 +226,7 @@
       <Filter>Source Files\Vulkan\Abstractions\DescriptorSetLayout</Filter>
     </ClCompile>
     <ClCompile Include="FrameGraph.cpp">
-      <Filter>Source Files\Vulkan\FraneGraph</Filter>
+      <Filter>Source Files\Vulkan\FrameGraph</Filter>
     </ClCompile>
     <ClCompile Include="Image.cpp">
       <Filter>Source Files\Vulkan\Abstractions\Image</Filter>
@@ -327,7 +327,7 @@
       <Filter>Source Files\Vulkan\Abstractions\DescriptorSetLayout</Filter>
     </ClInclude>
     <ClInclude Include="FrameGraph.h">
-      <Filter>Source Files\Vulkan\FraneGraph</Filter>
+      <Filter>Source Files\Vulkan\FrameGraph</Filter>
     </ClInclude>
     <ClInclude Include="Image.h">
       <Filter>Source Files\Vulkan\Abstractions\Image</Filter>

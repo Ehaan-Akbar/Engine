@@ -14,16 +14,23 @@ public:
 	~ECS();
 
 
-	void addEntity(std::shared_ptr<Entity> entity);
+	ECS* addEntity(std::shared_ptr<Entity> entity);
 	std::shared_ptr<Entity> getEntityById(uint32_t id);
+	ECS* removeEntity(uint32_t id);
 
 	template <typename T> ECS* addComponent(std::shared_ptr<Entity> entity, std::shared_ptr<T> component);
 	template <typename T> std::shared_ptr<T> getComponent(std::shared_ptr<Entity> entity);
+	template <typename T> ECS* removeComponent(uint32_t entityId, std::type_index componentType);
 
 	void onEachEntity(std::function<void(std::shared_ptr<Entity>)> callback);
 
 	size_t getEntityCount() {
 		return entities.size();
+	}
+
+	bool changeFlag = true;
+	void resetChangeFlag() {
+		changeFlag = false;
 	}
 
 private:
@@ -36,6 +43,8 @@ template<typename T> inline ECS* ECS::addComponent(std::shared_ptr<Entity> entit
 {
 	components[entity->id][std::type_index(typeid(T))] = component;
 
+	changeFlag = true;
+
 	return this;
 }
 
@@ -47,4 +56,13 @@ template<typename T> inline std::shared_ptr<T> ECS::getComponent(std::shared_ptr
 	if (componentsForEntity.find(componentID) != componentsForEntity.end()) {
 		return std::static_pointer_cast<T>(componentsForEntity[componentID]);
 	}
+}
+
+template<typename T> inline ECS* ECS::removeComponent(uint32_t entityId, std::type_index componentType)
+{
+	components[entityId].erase(componentType);
+
+	changeFlag = true;
+
+	return this;
 }

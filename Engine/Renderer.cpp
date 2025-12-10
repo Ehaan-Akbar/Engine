@@ -44,8 +44,6 @@ void Renderer::destroy()
 	}
 
 
-	vkDestroyDescriptorSetLayout(vulkanContext.vulkanResources.device, samplerDescriptorSetLayout, nullptr);
-	vkDestroyDescriptorSetLayout(vulkanContext.vulkanResources.device, uboDescriptorSetLayout, nullptr);
 	vkDestroyDescriptorSetLayout(vulkanContext.vulkanResources.device, bindlessDescriptorSetLayout, nullptr);
 
 
@@ -92,8 +90,6 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 
 	commandBuffers[currentFrame].begin();
 
-	vkCmdBindDescriptorSets(commandBuffers[currentFrame].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderedPipeline.pipelineLayout, 0, 1, &bindlessDescriptorSet.descriptorSet, 0, nullptr);
-
 	VkClearValue clearColors[2];
 	clearColors[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
 	clearColors[1].depthStencil = { 1.0f, 0 };
@@ -128,47 +124,55 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 	vkCmdSetScissor(commandBuffers[currentFrame].commandBuffer, 0, 1, &scissor);
 
 
-	uint32_t currentVertexOffset = 0;
-	uint32_t currentIndexOffset = 0;
-	drawInfos.clear();
-	drawInfos.reserve(ecs.getEntityCount());
-	batchedVertices.clear();
-	batchedIndices.clear();
+	
+	//Processing scene
+	if (ecs.changeFlag) {
+		uint32_t currentVertexOffset = 0;
+		uint32_t currentIndexOffset = 0;
+		uint32_t uboIndex = 0;
+		drawInfos.clear();
+		drawInfos.reserve(ecs.getEntityCount());
+		batchedVertices.clear();
+		batchedIndices.clear();
 
-	ecs.onEachEntity([&](std::shared_ptr<Entity> entity) {
-		const auto& t = ecs.getComponent<transform>(entity);
-		const auto& m = ecs.getComponent<mesh>(entity);
+		ecs.onEachEntity([&](std::shared_ptr<Entity> entity) {
+			const auto& t = ecs.getComponent<transform>(entity);
+			const auto& m = ecs.getComponent<mesh>(entity);
 
-		drawInfos.push_back({
-			.indexCount = static_cast<uint32_t>(m->indices->size()),
-			.firstIndex = currentIndexOffset,
-			.vertexOffset = currentVertexOffset,
-			.modelMatrix = t->transformationMatrix()
-		});
-		batchedVertices.insert(batchedVertices.end(), m->vertices->begin(), m->vertices->end());
-		for (size_t i = 0; i < m->indices->size(); ++i) {
-			batchedIndices.push_back((*m->indices)[i] + currentVertexOffset);
-		}
-		currentVertexOffset += m->vertices->size();
-		currentIndexOffset += m->indices->size();
-	});
-
-	if (!isMainVertexBufferInitialized) {
+			drawInfos.push_back({
+				.indexCount = static_cast<uint32_t>(m->indices->size()),
+				.firstIndex = currentIndexOffset,
+				.vertexOffset = 0,
+				.modelMatrix = t->transformationMatrix(),
+				.uboIndex = uboIndex++
+				});
+			batchedVertices.insert(batchedVertices.end(), m->vertices->begin(), m->vertices->end());
+			for (size_t i = 0; i < m->indices->size(); ++i) {
+				batchedIndices.push_back((*m->indices)[i] + currentVertexOffset);
+			}
+			currentVertexOffset += m->vertices->size();
+			currentIndexOffset += m->indices->size();
+			});
 		mainVertexBuffer.initVertexBuffer(std::make_shared<Vertices>(batchedVertices), vulkanContext.device.graphicsQueue, graphicsCommandPool.commandPool);
 		mainIndexBuffer.initIndexBuffer(std::make_shared<Indices>(batchedIndices), vulkanContext.device.graphicsQueue, graphicsCommandPool.commandPool);
 		isMainVertexBufferInitialized = true;
+
+		ecs.resetChangeFlag();
 	}
 
 	mainVertexBuffer.bind(commandBuffers[currentFrame].commandBuffer);
 	mainIndexBuffer.bind(commandBuffers[currentFrame].commandBuffer);
 
+
+	//Updating UBOs
+	for (size_t i = 0; i < MAX_RESOURCE_COUNT::UNIFORM_BUFFER; ++i) {
+		bindlessDescriptorSet.update(0, i, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, { uniformBuffers[currentFrame][i].buffer, 0, sizeof(UBO) });
+	}
+	bindlessDescriptorSet.update(1, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, renderedImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+
+
+	//Writing to UBOs
 	for (const auto& info : drawInfos) {
-
-		PushConstantMVP push{
-			.uboIndex = static_cast<uint32_t>(currentFrame),
-			.textureIndex = 0 //TODO: Texture index from entity
-		};
-
 		UBO ubo{
 			.model = info.modelMatrix,
 			.view = camera.getViewMatrix(),
@@ -177,8 +181,30 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 			.lightDir = glm::normalize(glm::vec4(-1.0f, -1.0f, -1.0f, 0.0f)),
 			.camPos = glm::vec4(camera.position, 0.0f)
 		};
+		
+		uniformBuffers[currentFrame][info.uboIndex].copy(sizeof(ubo), &ubo);
+	}
 
-		uniformBuffers[currentFrame].copy(sizeof(ubo), &ubo);
+	//Binding UBOs
+	vkCmdBindDescriptorSets(commandBuffers[currentFrame].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderedPipeline.pipelineLayout, 0, 1, &bindlessDescriptorSet.descriptorSet, 0, nullptr);
+
+
+	for (const auto& info : drawInfos) {
+		PushConstantMVP push{
+			.uboIndex = info.uboIndex,
+			.textureIndex = 0 //TODO: Texture index from entity
+		};
+
+		/*UBO ubo{
+			.model = info.modelMatrix,
+			.view = camera.getViewMatrix(),
+			.projection = camera.getProjectionMatrix(),
+			.lightPos = glm::vec4(4.0f, -3.0f, -4.0f, 0.0f),
+			.lightDir = glm::normalize(glm::vec4(-1.0f, -1.0f, -1.0f, 0.0f)),
+			.camPos = glm::vec4(camera.position, 0.0f)
+		};
+
+		uniformBuffers[currentFrame][info.uboIndex].copy(sizeof(ubo), &ubo);*/
 		
 		vkCmdPushConstants(commandBuffers[currentFrame].commandBuffer, renderedPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantMVP), &push);
 		vkCmdDrawIndexed(commandBuffers[currentFrame].commandBuffer, info.indexCount, 1, info.firstIndex, info.vertexOffset, 0);
@@ -233,8 +259,8 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 	vkCmdSetScissor(commandBuffers[currentFrame].commandBuffer, 0, 1, &scissor);
 
 	PushConstantMVP push{
-			.uboIndex = static_cast<uint32_t>(currentFrame),
-			.textureIndex = 0 //TODO: Texture index from entity
+			.uboIndex = static_cast<uint32_t>(0), //Not needed
+			.textureIndex = 0 //TODO: 
 	};
 	vkCmdPushConstants(commandBuffers[currentFrame].commandBuffer, renderedPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantMVP), &push);
 	vkCmdDraw(commandBuffers[currentFrame].commandBuffer, 6, 1, 0, 0);
@@ -314,10 +340,13 @@ void Renderer::initSyncObjects()
 
 void Renderer::initUniformBuffers()
 {
-	uniformBuffers.reserve(maxFramesInFlight);
+	uniformBuffers.resize(maxFramesInFlight);
 	for (int i = 0; i < maxFramesInFlight; ++i) {
-		uniformBuffers.emplace_back(vulkanContext.vulkanResources);
-		uniformBuffers.back().initUniformBuffer(sizeof(UBO));
+		uniformBuffers[i].reserve(MAX_RESOURCE_COUNT::UNIFORM_BUFFER);
+		for (int j = 0; j < MAX_RESOURCE_COUNT::UNIFORM_BUFFER; ++j) {
+			uniformBuffers[i].emplace_back(vulkanContext.vulkanResources);
+			uniformBuffers[i].back().initUniformBuffer(sizeof(UBO));
+		}
 	}
 }
 
@@ -681,68 +710,6 @@ void Renderer::initRenderingPipeline()
 	vkDestroyShaderModule(vulkanContext.vulkanResources.device, fragmentShaderModule, nullptr);
 }
 
-void Renderer::initDescriptorPools()
-{
-	sharedDescriptorPool.initDescriptorPool({ {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxFramesInFlight}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1} }, maxFramesInFlight+1);
-}
-
-void Renderer::initDescriptorSets()
-{
-	{
-		VkDescriptorSetLayoutBinding uboLayoutBinding{};
-		uboLayoutBinding.binding = 0;
-		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		uboLayoutBinding.descriptorCount = 1;
-		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-		uboLayoutBinding.pImmutableSamplers = nullptr;
-
-
-		VkDescriptorSetLayoutCreateInfo uboLayoutInfo{};
-		uboLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		uboLayoutInfo.bindingCount = 1;
-		uboLayoutInfo.pBindings = &uboLayoutBinding;
-
-		if (vkCreateDescriptorSetLayout(vulkanContext.vulkanResources.device, &uboLayoutInfo, nullptr, &uboDescriptorSetLayout) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create descriptor set layout smh");
-		}
-
-		VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-		samplerLayoutBinding.binding = 0;
-		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		samplerLayoutBinding.descriptorCount = 1;
-		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		samplerLayoutBinding.pImmutableSamplers = nullptr;
-
-		VkDescriptorSetLayoutCreateInfo samplerLayoutInfo{};
-		samplerLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		samplerLayoutInfo.bindingCount = 1;
-		samplerLayoutInfo.pBindings = &samplerLayoutBinding;
-
-		if (vkCreateDescriptorSetLayout(vulkanContext.vulkanResources.device, &samplerLayoutInfo, nullptr, &samplerDescriptorSetLayout) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create descriptor set layout smh");
-		}
-	}
-	
-	{
-		uboDescriptorSets.reserve(maxFramesInFlight);
-		for (size_t i = 0; i < maxFramesInFlight; ++i) {
-			uboDescriptorSets.emplace_back(vulkanContext.vulkanResources);
-			uboDescriptorSets.back().initDescriptorSet(uboDescriptorSetLayout, sharedDescriptorPool.descriptorPool);
-		}
-
-		samplerDescriptorSet.initDescriptorSet(samplerDescriptorSetLayout, sharedDescriptorPool.descriptorPool);
-	}
-
-	for (size_t i = 0; i < maxFramesInFlight; ++i) {
-		uboDescriptorSets[i].update(0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, {uniformBuffers[i].buffer, 0, sizeof(UBO)});
-	}
-
-	samplerDescriptorSet.update(0, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, renderedImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
-
-
-
-}
-
 void Renderer::initBindlessDescriptors()
 {
 	bindlessDescriptorPool.initDescriptorPool({ {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_RESOURCE_COUNT::UNIFORM_BUFFER}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_RESOURCE_COUNT::COMBINED_IMAGE_SAMPLER} }, 1, 
@@ -785,10 +752,7 @@ void Renderer::initBindlessDescriptors()
 
 	bindlessDescriptorSet.initDescriptorSet(bindlessDescriptorSetLayout, bindlessDescriptorPool.descriptorPool);
 
-	for (size_t i = 0; i < maxFramesInFlight; ++i) {
-		bindlessDescriptorSet.update(0, i, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, { uniformBuffers[i].buffer, 0, sizeof(UBO) });
-	}
-	bindlessDescriptorSet.update(1, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, renderedImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+	
 	
 	
 

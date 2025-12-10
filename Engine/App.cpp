@@ -16,10 +16,8 @@ App::App()
 
 	
 	ecs = new ECS();
-	ecs->addEntity(entity1);
-	ecs->addComponent<transform>(entity1, transformComponent1)->addComponent<mesh>(entity1, meshComponent1);
-	ecs->addEntity(entity2);
-	ecs->addComponent<transform>(entity2, transformComponent2)->addComponent<mesh>(entity2, meshComponent2);
+	ecs->addEntity(entity1)->addComponent<transform>(entity1, transformComponent1)->addComponent<mesh>(entity1, meshComponent1);
+	ecs->addEntity(entity2)->addComponent<transform>(entity2, transformComponent2)->addComponent<mesh>(entity2, meshComponent2);
 
 }
 

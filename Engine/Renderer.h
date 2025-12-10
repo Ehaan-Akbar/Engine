@@ -108,14 +108,7 @@ private:
 	void initRenderingPass();
 	void initRenderingPipeline();
 
-	DescriptorPool sharedDescriptorPool{ vulkanContext.vulkanResources };
-	void initDescriptorPools();
-
-	VkDescriptorSetLayout uboDescriptorSetLayout;
-	VkDescriptorSetLayout samplerDescriptorSetLayout;
-	std::vector<DescriptorSet> uboDescriptorSets;
-	DescriptorSet samplerDescriptorSet{ vulkanContext.vulkanResources };
-	void initDescriptorSets();
+	
 	//
 
 	//Bindless descriptorl
@@ -144,7 +137,7 @@ private:
 
 	VertexBuffer mainVertexBuffer{ vulkanContext.vulkanResources };
 	IndexBuffer mainIndexBuffer{ vulkanContext.vulkanResources };
-	std::vector<UniformBuffer> uniformBuffers;
+	std::vector<std::vector<UniformBuffer>> uniformBuffers;
 	
 
 	bool isMainVertexBufferInitialized = false;
@@ -157,6 +150,7 @@ private:
 		uint32_t firstIndex;
 		uint32_t vertexOffset;
 		glm::mat4 modelMatrix;
+		uint32_t uboIndex;
 	};
 
 	std::vector<drawInfo> drawInfos;
