@@ -15,6 +15,8 @@ CommandBuffer& CommandBuffer::allocate(VkCommandBufferLevel level)
 	if (vkAllocateCommandBuffers(vulkanResources.device, &allocateInfo, &commandBuffer)) {
 		throw std::runtime_error("Failed to allocate command buffer");
 	}
+
+	return *this;
 }
 
 void CommandBuffer::begin(VkCommandBufferUsageFlags usageFlags)

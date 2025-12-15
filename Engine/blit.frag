@@ -16,5 +16,5 @@ layout(push_constant) uniform Push {
 
 
 void main() {
-	outColor = texture(textureSampler[nonuniformEXT(push.textureIndex)], fragUV);
+	outColor = texture(textureSampler[nonuniformEXT(3)], fragUV);
 }

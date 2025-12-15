@@ -8,6 +8,7 @@ Image::Image(VulkanResources& vulkanResources) : vulkanResources{ vulkanResource
 void Image::initImage(VkImageType type, VkFormat format, VkExtent3D extent, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t mipLevels, uint32_t arrayLayers, VkSampleCountFlagBits samples, VkImageTiling tiling)
 {
 	this->imageType = type;
+	this->imageFormat = format;
 
 	VkImageCreateInfo imageInfo{};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -30,6 +31,9 @@ void Image::initImage(VkImageType type, VkFormat format, VkExtent3D extent, VkIm
 
 void Image::initImageView(VkImageViewType type, VkFormat format, VkImageSubresourceRange subresourceRange)
 {
+	this->imageViewType = type;
+	this->imageFormat = format;
+
 	VkImageViewCreateInfo imageViewInfo{};
 	imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	imageViewInfo.image = image;
@@ -48,6 +52,8 @@ void Image::destroyImage()
 		vmaDestroyImage(vulkanResources.allocator, image, imageAllocation);
 		image = VK_NULL_HANDLE;
 		imageAllocation = nullptr;
+		imageType = VK_IMAGE_TYPE_MAX_ENUM;
+		imageFormat = VK_FORMAT_UNDEFINED;
 	}
 	if (imageView != VK_NULL_HANDLE) {
 		vkDestroyImageView(vulkanResources.device, imageView, nullptr);

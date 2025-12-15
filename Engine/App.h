@@ -4,6 +4,8 @@
 #include "System.h"
 #include "Controller.h"
 
+//TODO Make images from g buffer pass be used in lighting pass
+
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE

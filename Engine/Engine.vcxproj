@@ -209,6 +209,10 @@
     <None Include="blit.frag" />
     <None Include="blit.vert" />
     <None Include="compile.bat" />
+    <None Include="gbuffer.frag" />
+    <None Include="gbuffer.vert" />
+    <None Include="lighting.frag" />
+    <None Include="lighting.vert" />
     <None Include="render.frag" />
     <None Include="render.vert" />
     <None Include="shader.frag" />

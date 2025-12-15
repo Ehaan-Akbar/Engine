@@ -355,5 +355,17 @@
     <None Include="blit.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="gbuffer.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="gbuffer.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="lighting.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="lighting.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

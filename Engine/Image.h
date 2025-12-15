@@ -31,5 +31,7 @@ private:
 
 
 	VkImageType imageType;
+	VkImageViewType imageViewType;
+	VkFormat imageFormat;
 };
 

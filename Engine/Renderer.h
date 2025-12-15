@@ -107,11 +107,36 @@ private:
 	void initRenderingResources();
 	void initRenderingPass();
 	void initRenderingPipeline();
-
-	
 	//
 
-	//Bindless descriptorl
+	//G-Buffer
+	Image gBufferAlbedoImage{ vulkanContext.vulkanResources };
+	Image gBufferNormalImage{ vulkanContext.vulkanResources };
+	Image gBufferMaterialImage{ vulkanContext.vulkanResources };
+	Image gBufferDepthImage{ vulkanContext.vulkanResources };
+
+	Framebuffer gBufferFramebuffer{ vulkanContext.vulkanResources };
+	RenderPass gBufferRenderPass{ vulkanContext.vulkanResources };
+	Pipeline gBufferPipeline{ vulkanContext.vulkanResources };
+
+	void initGBufferResources();
+	void initGBufferPass();
+	void initGBufferPipeline();
+	//G-Buffer
+
+	//Lighting
+	Image lightingImage{ vulkanContext.vulkanResources };
+
+	Framebuffer lightingFramebuffer{ vulkanContext.vulkanResources };
+	RenderPass lightingRenderPass{ vulkanContext.vulkanResources };
+	Pipeline lightingPipeline{ vulkanContext.vulkanResources };
+
+	void initLightingResources();
+	void initLightingPass();
+	void initLightingPipeline();
+	//Lighting
+
+	//Bindless descriptor
 	VkDescriptorSetLayout bindlessDescriptorSetLayout;
 	DescriptorPool bindlessDescriptorPool{ vulkanContext.vulkanResources };
 	DescriptorSet bindlessDescriptorSet{ vulkanContext.vulkanResources };

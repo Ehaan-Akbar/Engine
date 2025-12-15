@@ -13,6 +13,7 @@ class Pipeline
 public:
 	friend class VulkanApp;
 	friend class Renderer;
+	friend class FrameGraph;
 
 	Pipeline(VulkanResources& vulkanResources);
 	void initPipeline(

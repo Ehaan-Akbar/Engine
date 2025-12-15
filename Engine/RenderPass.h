@@ -13,6 +13,7 @@ class RenderPass
 public:
 	friend class VulkanApp;
 	friend class Renderer;
+	friend class FrameGraph;
 
 	RenderPass(VulkanResources& vulkanResources);
 	void initRenderPass(
