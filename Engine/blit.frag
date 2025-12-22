@@ -7,14 +7,15 @@ layout(location = 0) out vec4 outColor;
 
 
 
-layout(set = 0, binding = 1) uniform sampler2D textureSampler[]; 
+//set 0 - Target
+
+layout(set = 0, binding = 3) uniform sampler2D lightingImage;
 
 layout(push_constant) uniform Push {
     uint uboIndex;
     uint textureIndex;
 } push;
 
-
 void main() {
-	outColor = texture(textureSampler[nonuniformEXT(3)], fragUV);
+	outColor = texture(lightingImage, fragUV);
 }

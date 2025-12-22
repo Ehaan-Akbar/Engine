@@ -18,6 +18,10 @@ vec2 uvs[6] = vec2[](
 	vec2(0.0, 1.0)
 );
 
+//set 0 - Target
+
+layout(set = 0, binding = 3) uniform sampler2D lightingImage;
+
 layout(push_constant) uniform Push {
     uint uboIndex;
     uint textureIndex;

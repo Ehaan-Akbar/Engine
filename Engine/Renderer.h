@@ -13,6 +13,7 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "UniformBuffer.h"
+#include "StorageBuffer.h"
 #include "DescriptorPool.h"
 #include "DescriptorSet.h"
 #include "Image.h"
@@ -30,11 +31,23 @@
 #include "VulkanContext.h"
 
 #include "ECS.h"
+#include "DescriptorManager.h"
 #include "Camera.h"
+
+
 
 struct MAX_RESOURCE_COUNT {
 	static const uint32_t UNIFORM_BUFFER = 16;
-	static const uint32_t COMBINED_IMAGE_SAMPLER = 16;
+	static const uint32_t COMBINED_IMAGE_SAMPLER_TEXTURE = 16;
+	static const uint32_t COMBINED_IMAGE_SAMPLER_ALBEDO = 16;
+	static const uint32_t COMBINED_IMAGE_SAMPLER_ROUGHNESS = 16;
+	static const uint32_t COMBINED_IMAGE_SAMPLER_NORMAL = 16;
+	static const uint32_t COMBINED_IMAGE_SAMPLER_OCCLUSION = 16;
+	static const uint32_t COMBINED_IMAGE_SAMPLER_EMISSIVE = 16;
+
+	static int getTotal() {
+		return UNIFORM_BUFFER + COMBINED_IMAGE_SAMPLER_TEXTURE * 6;
+	}
 };
 
 struct PushConstantMVP {
@@ -43,13 +56,25 @@ struct PushConstantMVP {
 	alignas(8) uint32_t padding[2];
 };
 
-struct UBO {
-	glm::mat4 model;
+struct globalUBO {
 	glm::mat4 view;
 	glm::mat4 projection;
 	glm::vec4 lightPos;
 	glm::vec4 lightDir;
 	glm::vec4 camPos;
+	glm::vec4 dimensions;
+	glm::mat4 inverseProjection;
+	glm::mat4 inverseView;
+};
+
+struct objectSSBO {
+	glm::mat4 model;
+};
+
+struct lightSSBO {
+	glm::vec4 lightPos;
+	glm::vec4 lightDir;
+	glm::vec4 lightColor;
 };
 
 
@@ -71,7 +96,25 @@ public:
 
 
 	void recreateSwapchain();
+	
+	void justFix() {
+		//TODO: Resources
 
+
+		// //Updating UBOs and SSBOs
+		descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::GLOBAL_UBO, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, { globalUniformBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
+		descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::OBJECT_SSBO, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, { objectStorageBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
+		descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::LIGHTING_SSBO, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, { lightingStorageBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
+
+		//Updating Target Descriptors
+		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::ALBEDO_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, gBufferAlbedoImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::NORMAL_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, gBufferNormalImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::MATERIAL_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, gBufferMaterialImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::LIGHTING_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, lightingImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::DEPTH_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { depthSampler, gBufferDepthImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+	
+	
+	}
 
 public:
 
@@ -81,6 +124,7 @@ private:
 	void initCommandBuffers();
 	void initSyncObjects();
 	void initUniformBuffers();
+	void initStorageBuffers();
 
 
 	VulkanContext& vulkanContext;
@@ -89,7 +133,9 @@ private:
 	
 	void initSampler();
 	VkSampler textureSampler;
-	//
+	VkSampler depthSampler;
+
+	//Swapchain / Blit Pass
 	std::vector<VkImage> swapchainImages;
 	std::vector<VkImageView> swapchainImageViews;
 	std::vector<Framebuffer> framebuffers;
@@ -98,16 +144,7 @@ private:
 	void initSwapchainResources();
 	void initSwapchainRenderPass();
 	void initSwapchainPipeline();
-
-	Image renderedImage{ vulkanContext.vulkanResources };
-	Image renderedDepthImage{ vulkanContext.vulkanResources };
-	Framebuffer renderedFramebuffer{ vulkanContext.vulkanResources };
-	RenderPass renderedRenderPass{ vulkanContext.vulkanResources };
-	Pipeline renderedPipeline{ vulkanContext.vulkanResources };
-	void initRenderingResources();
-	void initRenderingPass();
-	void initRenderingPipeline();
-	//
+	//Swapchain / Blit Pass
 
 	//G-Buffer
 	Image gBufferAlbedoImage{ vulkanContext.vulkanResources };
@@ -136,12 +173,8 @@ private:
 	void initLightingPipeline();
 	//Lighting
 
-	//Bindless descriptor
-	VkDescriptorSetLayout bindlessDescriptorSetLayout;
-	DescriptorPool bindlessDescriptorPool{ vulkanContext.vulkanResources };
-	DescriptorSet bindlessDescriptorSet{ vulkanContext.vulkanResources };
-	void initBindlessDescriptors();
-	//
+	DescriptorManager descriptorManager{ vulkanContext.vulkanResources };
+
 
 
 	CommandPool graphicsCommandPool{ vulkanContext.vulkanResources };
@@ -162,7 +195,11 @@ private:
 
 	VertexBuffer mainVertexBuffer{ vulkanContext.vulkanResources };
 	IndexBuffer mainIndexBuffer{ vulkanContext.vulkanResources };
-	std::vector<std::vector<UniformBuffer>> uniformBuffers;
+
+	std::vector<UniformBuffer> globalUniformBuffers;
+	std::vector<StorageBuffer> objectStorageBuffers;
+	std::vector<StorageBuffer> lightingStorageBuffers;
+	
 	
 
 	bool isMainVertexBufferInitialized = false;

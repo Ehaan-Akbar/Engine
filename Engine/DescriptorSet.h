@@ -13,6 +13,7 @@ class DescriptorSet
 {
 public:
 	friend class Renderer;
+	friend class DescriptorManager;
 
 	DescriptorSet(VulkanResources& vulkanResources);
 	void initDescriptorSet(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorPool descriptorPool);

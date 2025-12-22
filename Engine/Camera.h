@@ -37,6 +37,15 @@ public:
 
 		return viewMatrix; 
 	}
+	glm::mat4& getInverseProjectionMatrix() { 
+		inverseProjectionMatrix = glm::inverse(projectionMatrix); 
+		return inverseProjectionMatrix; 
+	}
+
+	glm::mat4& getInverseViewMatrix() { 
+		inverseViewMatrix = glm::inverse(getViewMatrix()); 
+		return inverseViewMatrix; 
+	}
 
 	glm::vec3 getForwardVector() {
 		return glm::normalize(glm::vec3{ glm::cos(rotation.y) * glm::cos(rotation.x), glm::sin(rotation.y), glm::cos(rotation.y) * glm::sin(rotation.x) });
@@ -54,5 +63,7 @@ private:
 
 	glm::mat4 projectionMatrix{ 1.0f };
 	glm::mat4 viewMatrix{ 1.0f };
+	glm::mat4 inverseProjectionMatrix{ 1.0f };
+	glm::mat4 inverseViewMatrix{ 1.0f };
 };
 

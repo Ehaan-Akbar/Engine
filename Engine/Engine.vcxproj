@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -143,6 +143,7 @@
     <ClCompile Include="CommandBuffer.cpp" />
     <ClCompile Include="CommandPool.cpp" />
     <ClCompile Include="Component.cpp" />
+    <ClCompile Include="DescriptorManager.cpp" />
     <ClCompile Include="DescriptorPool.cpp" />
     <ClCompile Include="DescriptorSet.cpp" />
     <ClCompile Include="DescriptorSetLayout.cpp" />
@@ -152,6 +153,7 @@
     <ClCompile Include="Framebuffer.cpp" />
     <ClCompile Include="FrameGraph.cpp" />
     <ClCompile Include="Image.cpp" />
+    <ClCompile Include="ImageLoader.cpp" />
     <ClCompile Include="IndexBuffer.cpp" />
     <ClCompile Include="Instance.cpp" />
     <ClCompile Include="Controller.cpp" />
@@ -159,6 +161,9 @@
     <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
+    <ClCompile Include="ResourceManager.cpp" />
+    <ClCompile Include="stb_image.cpp" />
+    <ClCompile Include="StorageBuffer.cpp" />
     <ClCompile Include="Surface.cpp" />
     <ClCompile Include="Swapchain.cpp" />
     <ClCompile Include="System.cpp" />
@@ -177,6 +182,7 @@
     <ClInclude Include="CommandBuffer.h" />
     <ClInclude Include="CommandPool.h" />
     <ClInclude Include="Component.h" />
+    <ClInclude Include="DescriptorManager.h" />
     <ClInclude Include="DescriptorPool.h" />
     <ClInclude Include="DescriptorSet.h" />
     <ClInclude Include="DescriptorSetLayout.h" />
@@ -187,12 +193,17 @@
     <ClInclude Include="FrameGraph.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="Image.h" />
+    <ClInclude Include="ImageLoader.h" />
     <ClInclude Include="IndexBuffer.h" />
     <ClInclude Include="Instance.h" />
     <ClInclude Include="Controller.h" />
     <ClInclude Include="Pipeline.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderPass.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="ResourceManager.h" />
+    <ClInclude Include="stb_image.h" />
+    <ClInclude Include="StorageBuffer.h" />
     <ClInclude Include="Surface.h" />
     <ClInclude Include="Swapchain.h" />
     <ClInclude Include="System.h" />
@@ -213,10 +224,9 @@
     <None Include="gbuffer.vert" />
     <None Include="lighting.frag" />
     <None Include="lighting.vert" />
-    <None Include="render.frag" />
-    <None Include="render.vert" />
-    <None Include="shader.frag" />
-    <None Include="shader.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Engine.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

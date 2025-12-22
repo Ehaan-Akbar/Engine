@@ -18,16 +18,34 @@ vec2 uvs[6] = vec2[](
 	vec2(0.0, 1.0)
 );
 
-layout(set = 0, binding = 0) uniform UBO {
-    mat4 model;
+//set 0 - Global
+//set 1 - Resources
+//set 2 - Target
+
+layout(set = 0, binding = 0) uniform GlobalUBO {
     mat4 view;
     mat4 projection;
     vec4 lightPos;
     vec4 lightDir;
     vec4 camPos;
-} ubos[];
+    vec4 dimensions;
+    mat4 inverseProjection;
+    mat4 inverseView;
+} globalUbo;
 
-layout(set = 0, binding = 1) uniform sampler2D textureSampler[]; 
+struct ObjectSSBO {
+    mat4 model;
+};
+
+layout(set = 0, binding = 1) buffer ObjectBuffer {
+    ObjectSSBO objectSSBOs[];
+};
+
+
+layout(set = 2, binding = 0) uniform sampler2D albedoImage;
+layout(set = 2, binding = 1) uniform sampler2D normalImage;
+layout(set = 2, binding = 2) uniform sampler2D materialImage;
+layout(set = 2, binding = 3) uniform sampler2D depthImage;
 
 layout(push_constant) uniform Push {
     uint uboIndex;
