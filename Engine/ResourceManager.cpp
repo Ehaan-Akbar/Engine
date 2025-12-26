@@ -5,20 +5,38 @@ ResourceManager::ResourceManager()
 
 }
 
-void ResourceManager::createTextureImage(std::string path)
+std::shared_ptr<ResourceManager::ImageResource> ResourceManager::createImage(std::string&& path, ResourceType type)
 {
-	int texWidth, texHeight, texChannels;
-	stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-	if (!pixels) {
-		throw std::runtime_error("Failed to load texture image!");
+	auto textureResource = std::make_shared<ImageResource>();
+	textureResource->type = type;
+	textureResource->path = path;
+	textureResource->id = idCounter++;
+
+	images[type].push_back(textureResource);
+
+	return textureResource;
+}
+
+void ResourceManager::loadImage(std::shared_ptr<ImageResource> imageResource)
+{
+	if (imageResource->cpuState == ResourceState::UNLOADED) {
+		imageResource->cpuState = ResourceState::LOADING;
+		int texWidth, texHeight, texChannels;
+		stbi_uc* pixels = stbi_load(imageResource->path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		if (!pixels) {
+			imageResource->cpuState = ResourceState::FAILED;
+			return;
+		}
+
+		imageResource->width = texWidth;
+		imageResource->height = texHeight;
+		imageResource->pixels = pixels;
+
+		//stbi_image_free(pixels);
+		imageResource->cpuState = ResourceState::LOADED;
 	}
 
-	auto textureResource = std::make_shared<TextureResource>();
-	textureResource->path = path;
-	textureResource->width = texWidth;
-	textureResource->height = texHeight;
-	textureResource->pixels.resize(texWidth * texHeight * 4);
-	std::memcpy(textureResource->pixels.data(), pixels, texWidth * texHeight * 4);
+	uploadQueue.push(imageResource);
 }
 
 ResourceManager::~ResourceManager()

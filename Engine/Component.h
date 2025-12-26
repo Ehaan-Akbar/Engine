@@ -93,6 +93,8 @@ public:
 			4, 5, 1, 1, 0, 4
 	});
 
+	uint32_t textureIndex;
+
 	void loadModel(const std::string& file) {
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;
@@ -158,5 +160,30 @@ public:
 			}
 		}
 	}
+};
+
+class material : public Component {
+public:
+	uint32_t textureIndex;
+	uint32_t albedoIndex;
+	uint32_t roughnessIndex;
+	uint32_t normalIndex;
+	uint32_t occlusionIndex;
+	uint32_t emissiveIndex;
+};
+
+class light : public Component {
+public:
+	enum LIGHT_TYPE : uint32_t {
+		DIRECTIONAL,
+		POINT,
+		SPOT,
+		AREA
+	};
+
+	LIGHT_TYPE type;
+	glm::vec4 position;
+	glm::vec4 direction;
+	glm::vec4 color;
 };
 

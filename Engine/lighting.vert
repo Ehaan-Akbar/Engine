@@ -25,12 +25,11 @@ vec2 uvs[6] = vec2[](
 layout(set = 0, binding = 0) uniform GlobalUBO {
     mat4 view;
     mat4 projection;
-    vec4 lightPos;
-    vec4 lightDir;
     vec4 camPos;
     vec4 dimensions;
     mat4 inverseProjection;
     mat4 inverseView;
+	vec4 numOfEntities;
 } globalUbo;
 
 struct ObjectSSBO {

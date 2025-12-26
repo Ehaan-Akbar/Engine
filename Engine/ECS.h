@@ -6,6 +6,7 @@
 #include "Entity.h"
 #include "Component.h"
 
+
 class ECS
 {
 public:
@@ -33,6 +34,7 @@ public:
 		changeFlag = false;
 	}
 
+
 private:
 
 	std::unordered_map<uint32_t, std::shared_ptr<Entity>> entities;
@@ -56,6 +58,8 @@ template<typename T> inline std::shared_ptr<T> ECS::getComponent(std::shared_ptr
 	if (componentsForEntity.find(componentID) != componentsForEntity.end()) {
 		return std::static_pointer_cast<T>(componentsForEntity[componentID]);
 	}
+	
+	return nullptr;
 }
 
 template<typename T> inline ECS* ECS::removeComponent(uint32_t entityId, std::type_index componentType)

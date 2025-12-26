@@ -10,6 +10,7 @@ layout(location = 3) in vec2 inUV;
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec3 fragPosWorld;
 layout(location = 2) out vec3 fragNormalWorld;
+layout(location = 3) out vec2 fragUV;
 
 //set 0 - Global
 //set 1 - Resources
@@ -17,8 +18,6 @@ layout(location = 2) out vec3 fragNormalWorld;
 layout(set = 0, binding = 0) uniform GlobalUBO {
     mat4 view;
     mat4 projection;
-    vec4 lightPos;
-    vec4 lightDir;
     vec4 camPos;
 } globalUbo;
 
@@ -29,6 +28,8 @@ struct ObjectSSBO {
 layout(set = 0, binding = 1) buffer ObjectBuffer {
     ObjectSSBO objectSSBOs[];
 };
+
+layout(set = 1, binding = 0) uniform sampler2D textures[];
 
 layout(push_constant) uniform Push {
     uint uboIndex;
@@ -51,4 +52,5 @@ void main() {
     fragPosWorld = positionWorld.xyz;
 
     fragColor = inColor;
+    fragUV = inUV;
 }

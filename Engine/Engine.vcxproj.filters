@@ -148,6 +148,9 @@
     <Filter Include="Source Files\Vulkan\DescriptorManager">
       <UniqueIdentifier>{7a9b83f5-d9a3-4143-bad0-cc92fcb11466}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Vulkan\Abstractions\Buffer\StagingBuffer">
+      <UniqueIdentifier>{e9331c0d-da8c-4752-9319-0a316a92ae51}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="VkBootstrap.cpp">
@@ -260,6 +263,9 @@
     </ClCompile>
     <ClCompile Include="stb_image.cpp">
       <Filter>Source Files\Libraries\StbImage</Filter>
+    </ClCompile>
+    <ClCompile Include="StagingBuffer.cpp">
+      <Filter>Source Files\Vulkan\Abstractions\Buffer\StagingBuffer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -379,6 +385,9 @@
     </ClInclude>
     <ClInclude Include="StorageBuffer.h">
       <Filter>Source Files\Vulkan\Abstractions\Buffer\StorageBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="StagingBuffer.h">
+      <Filter>Source Files\Vulkan\Abstractions\Buffer\StagingBuffer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

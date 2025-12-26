@@ -162,6 +162,7 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
+    <ClCompile Include="StagingBuffer.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="StorageBuffer.cpp" />
     <ClCompile Include="Surface.cpp" />
@@ -202,6 +203,7 @@
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourceManager.h" />
+    <ClInclude Include="StagingBuffer.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="StorageBuffer.h" />
     <ClInclude Include="Surface.h" />

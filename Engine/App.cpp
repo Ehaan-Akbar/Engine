@@ -3,7 +3,7 @@
 App::App()
 {
 	window = new Window();
-	window->initWindow(800, 800, "asd");
+	window->initWindow(2000, 1200, "asd");
 
 	context = new VulkanContext(window->getWindow());
 
@@ -16,20 +16,42 @@ App::App()
 
 	
 	ecs = new ECS();
-	ecs->addEntity(entity1)->addComponent<transform>(entity1, transformComponent1)->addComponent<mesh>(entity1, meshComponent1);
-	ecs->addEntity(entity2)->addComponent<transform>(entity2, transformComponent2)->addComponent<mesh>(entity2, meshComponent2);
+	ecs->addEntity(entity1)->addComponent<transform>(entity1, transformComponent1)->addComponent<mesh>(entity1, meshComponent1)->addComponent<material>(entity1, materialComponent1);
+	//ecs->addEntity(entity2)->addComponent<transform>(entity2, transformComponent2)->addComponent<mesh>(entity2, meshComponent2)->addComponent<material>(entity2, materialComponent2);
+	ecs->addEntity(light1)->addComponent<light>(light1, lightComponent1);
+
+	resourceManager = new ResourceManager();
+
+	
+
 
 }
 
 void App::run()
 {
-	meshComponent1->loadModel("sphere.obj");
-	meshComponent2->loadModel("suzanne.obj");
 
+	auto def = resourceManager->createImage("default.png", ResourceManager::TEXTURES);
+	resourceManager->loadImage(def);
+
+	auto t1 = resourceManager->createImage("viking_room.png", ResourceManager::TEXTURES);
+	resourceManager->loadImage(t1);
+
+	meshComponent1->textureIndex = t1->getID();
+
+	std::cout << t1->cpuState << std::endl;
+
+	meshComponent1->loadModel("viking_room.obj.txt");
+	meshComponent2->loadModel("plane.obj");
+
+	transformComponent1->position = { 0.0f, 0.0f, 0.0f };
+	transformComponent2->position = { 0.0f, 0.0f, 0.0f };
+
+	lightComponent1->type = light::DIRECTIONAL;
+	lightComponent1->direction = glm::normalize(glm::vec4(-1.0f, -1.0f, -1.0f, 0.0f));
+	lightComponent1->position = glm::vec4(4.0f, -3.0f, -4.0f, 0.0f);
+	lightComponent1->color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	
-	transformComponent1->position = { 0.0f, 0.0f, 0.0f };
-	transformComponent2->position = { 8.0f, -6.0f, -8.0f };
 
 	//camera->setViewTarget(glm::vec3(0.0f, 0.0f, 0.0f), transformComponent2->position);
 
@@ -37,7 +59,6 @@ void App::run()
 	glfwSetInputMode(window->getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	while (!glfwWindowShouldClose(window->getWindow())) {
 
-		//std::cout << "Camera Position: " << camera->position.x << ", " << camera->position.y << ", " << camera->position.z << std::endl;
 
 		glfwPollEvents();
 
@@ -54,18 +75,23 @@ void App::run()
 
 		
 		//Rotation Testing
-		transformComponent1->rotation.x = glm::pi<float>();
+		transformComponent1->rotation.x = glm::pi<float>()/2;
 		transformComponent2->rotation.x = glm::pi<float>();
-		/*transformComponent1->rotation.y += 0.0002f * glm::pi<float>();
-		transformComponent1->rotation.x += 0.0002f * glm::pi<float>();
+		transformComponent1->rotation.y += 0.0002f * glm::pi<float>();
+		/*transformComponent1->rotation.x += 0.0002f * glm::pi<float>();
 
 		transformComponent2->rotation.y -= 0.00002f * glm::pi<float>();
 		transformComponent2->rotation.x -= 0.00002f * glm::pi<float>();*/
 		
+		/*static float t = 0;
+		t = t + 1 % 1000;
+		lightComponent1->color.x = glm::cos(t / 1000) / 2 + 0.5;
+		lightComponent1->color.y = glm::sin(t / 1000) / 2 + 0.5;
+		lightComponent1->color.z = glm::cos(t / 1000) / 2 + 0.5;*/
 
 		//Render Loop
 		if (!renderer->beginFrame()) continue;
-		renderer->submit(*ecs, *camera);
+		renderer->submit(*ecs, *camera, *resourceManager);
 		renderer->endFrame();
 
 	}
@@ -87,4 +113,5 @@ App::~App()
 	delete window;
 	delete ecs;
 	delete controller;
+	delete resourceManager;
 }

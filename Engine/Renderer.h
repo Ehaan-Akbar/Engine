@@ -33,7 +33,8 @@
 #include "ECS.h"
 #include "DescriptorManager.h"
 #include "Camera.h"
-
+#include "ResourceManager.h"
+#include "StagingBuffer.h"
 
 
 struct MAX_RESOURCE_COUNT {
@@ -51,7 +52,7 @@ struct MAX_RESOURCE_COUNT {
 };
 
 struct PushConstantMVP {
-	alignas(4) uint32_t uboIndex;
+	alignas(4) uint32_t ssboIndex;
 	alignas(4) uint32_t textureIndex;
 	alignas(8) uint32_t padding[2];
 };
@@ -59,21 +60,26 @@ struct PushConstantMVP {
 struct globalUBO {
 	glm::mat4 view;
 	glm::mat4 projection;
-	glm::vec4 lightPos;
-	glm::vec4 lightDir;
 	glm::vec4 camPos;
 	glm::vec4 dimensions;
 	glm::mat4 inverseProjection;
 	glm::mat4 inverseView;
+	//{Objects, Lights, Billboards?, Something random}
+	glm::vec4 numberOfEntities;
 };
 
 struct objectSSBO {
 	glm::mat4 model;
 };
 
+//0 - Directional
+//1 - Point
+//2 - Spot
+//3 - Area
 struct lightSSBO {
-	glm::vec4 lightPos;
+	glm::vec4 lightType;
 	glm::vec4 lightDir;
+	glm::vec4 lightPos;
 	glm::vec4 lightColor;
 };
 
@@ -87,12 +93,15 @@ public:
 
 	Renderer(VulkanContext& vulkanContext);
 	void init();
+	void update(ECS& ecs, Camera& camera, ResourceManager& resourceManager);
 	void destroy();
 	~Renderer();
 
 	bool beginFrame();
-	void submit(ECS& ecs, Camera& camera);
+	void submit(ECS& ecs, Camera& camera, ResourceManager& resourceManager);
 	void endFrame();
+
+	void handleResourcesUpload(ResourceManager& resourceManager, VkCommandBuffer& commandBuffer);
 
 
 	void recreateSwapchain();
@@ -104,7 +113,7 @@ public:
 		// //Updating UBOs and SSBOs
 		descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::GLOBAL_UBO, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, { globalUniformBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
 		descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::OBJECT_SSBO, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, { objectStorageBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
-		descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::LIGHTING_SSBO, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, { lightingStorageBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
+		descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::LIGHTING_SSBO, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, { lightStorageBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
 
 		//Updating Target Descriptors
 		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::ALBEDO_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, gBufferAlbedoImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
@@ -175,6 +184,9 @@ private:
 
 	DescriptorManager descriptorManager{ vulkanContext.vulkanResources };
 
+	//Images
+	std::vector<Image*> images;
+	//Images
 
 
 	CommandPool graphicsCommandPool{ vulkanContext.vulkanResources };
@@ -190,7 +202,8 @@ private:
 
 
 
-
+	StagingBuffer stagingBuffer{ vulkanContext.vulkanResources };
+	
 
 
 	VertexBuffer mainVertexBuffer{ vulkanContext.vulkanResources };
@@ -198,7 +211,7 @@ private:
 
 	std::vector<UniformBuffer> globalUniformBuffers;
 	std::vector<StorageBuffer> objectStorageBuffers;
-	std::vector<StorageBuffer> lightingStorageBuffers;
+	std::vector<StorageBuffer> lightStorageBuffers;
 	
 	
 
@@ -212,10 +225,19 @@ private:
 		uint32_t firstIndex;
 		uint32_t vertexOffset;
 		glm::mat4 modelMatrix;
-		uint32_t uboIndex;
+		uint32_t ssboIndex;
+		uint32_t textureIndex;
+	};
+
+	struct lightInfo {
+		light::LIGHT_TYPE type;
+		glm::vec4 direction;
+		glm::vec4 position;
+		glm::vec4 color;
 	};
 
 	std::vector<drawInfo> drawInfos;
+	std::vector<lightInfo> lightInfos;
 
 };
 

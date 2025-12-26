@@ -21,6 +21,9 @@ public:
 	void destroyImage();
 	~Image();
 
+	void transitionImageLayout(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subresourceRange);
+	void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImageLayout imageLayout, uint32_t width, uint32_t height, uint32_t depth = 1, uint32_t baseArrayLayer = 0);
+
 
 private:
 	VulkanResources& vulkanResources;
@@ -33,5 +36,7 @@ private:
 	VkImageType imageType;
 	VkImageViewType imageViewType;
 	VkFormat imageFormat;
+	VkFormat imageViewFormat;
+	VkExtent3D extent;
 };
 

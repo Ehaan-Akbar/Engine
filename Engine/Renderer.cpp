@@ -30,6 +30,9 @@ void Renderer::init()
 	initSwapchainPipeline();
 	initGBufferPipeline();
 	initLightingPipeline();
+
+	size_t maxImageSize = 4096 * 4096 * 4;
+	stagingBuffer.initStagingBuffer(maxImageSize);
 	
 
 	justFix();
@@ -37,6 +40,7 @@ void Renderer::init()
 
 void Renderer::destroy()
 {
+	vkDeviceWaitIdle(vulkanContext.vulkanResources.device);
 	// Make destroy idempotent by early-return if we've already cleaned up.
 	// We'll detect by checking whether sync objects vector is empty AND commandBuffers cleared.
 	if (imageAvailableSemaphores.empty() && commandBuffers.empty()) {
@@ -97,6 +101,9 @@ void Renderer::destroy()
 	gBufferMaterialImage.destroyImage();
 	gBufferDepthImage.destroyImage();
 	lightingImage.destroyImage();
+	for (auto& image : images) {
+		delete image;
+	}
 
 	// Destroy framebuffers (idempotent)
 	gBufferFramebuffer.destroyFrameBuffer();
@@ -137,45 +144,63 @@ bool Renderer::beginFrame()
 	return true;
 }
 
-void Renderer::submit(ECS& ecs, Camera& camera)
+void Renderer::submit(ECS& ecs, Camera& camera, ResourceManager& resourceManager)
 {
 
 	commandBuffers[currentFrame].begin();
 
+	handleResourcesUpload(resourceManager, commandBuffers[currentFrame].commandBuffer);
+
 	//Processing scene
-	if (ecs.changeFlag) {
-		uint32_t currentVertexOffset = 0;
-		uint32_t currentIndexOffset = 0;
-		uint32_t uboIndex = 0;
-		drawInfos.clear();
-		drawInfos.reserve(ecs.getEntityCount());
-		batchedVertices.clear();
-		batchedIndices.clear();
+	uint32_t currentVertexOffset = 0;
+	uint32_t currentIndexOffset = 0;
+	uint32_t uboIndex = 0;
+	drawInfos.clear();
+	lightInfos.clear();
+	drawInfos.reserve(ecs.getEntityCount());
+	lightInfos.reserve(ecs.getEntityCount());
+	batchedVertices.clear();
+	batchedIndices.clear();
 
-		ecs.onEachEntity([&](std::shared_ptr<Entity> entity) {
-			const auto& t = ecs.getComponent<transform>(entity);
-			const auto& m = ecs.getComponent<mesh>(entity);
-
-			drawInfos.push_back({
-				.indexCount = static_cast<uint32_t>(m->indices->size()),
-				.firstIndex = currentIndexOffset,
-				.vertexOffset = 0,
-				.modelMatrix = t->transformationMatrix(),
-				.uboIndex = uboIndex++
+	ecs.onEachEntity([&](std::shared_ptr<Entity> entity) {
+		const auto& l = ecs.getComponent<light>(entity);
+		if (l) {
+			lightInfos.push_back({
+				.type = l->type,
+				.direction = l->direction,
+				.position = l->position,
+				.color = l->color
 				});
-			batchedVertices.insert(batchedVertices.end(), m->vertices->begin(), m->vertices->end());
-			for (size_t i = 0; i < m->indices->size(); ++i) {
-				batchedIndices.push_back((*m->indices)[i] + currentVertexOffset);
-			}
-			currentVertexOffset += m->vertices->size();
-			currentIndexOffset += m->indices->size();
+			return;
+		}
+		const auto& t = ecs.getComponent<transform>(entity);
+		const auto& m = ecs.getComponent<mesh>(entity);
+
+		drawInfos.push_back({
+			.indexCount = static_cast<uint32_t>(m->indices->size()),
+			.firstIndex = currentIndexOffset,
+			.vertexOffset = 0,
+			.modelMatrix = t->transformationMatrix(),
+			.ssboIndex = uboIndex++,
+			.textureIndex = m->textureIndex
 			});
+
+		batchedVertices.insert(batchedVertices.end(), m->vertices->begin(), m->vertices->end());
+		for (size_t i = 0; i < m->indices->size(); ++i) {
+			batchedIndices.push_back((*m->indices)[i] + currentVertexOffset);
+		}
+		currentVertexOffset += m->vertices->size();
+		currentIndexOffset += m->indices->size();
+		});
+
+	if (!isMainVertexBufferInitialized) {
 		mainVertexBuffer.initVertexBuffer(std::make_shared<Vertices>(batchedVertices), vulkanContext.device.graphicsQueue, graphicsCommandPool.commandPool);
 		mainIndexBuffer.initIndexBuffer(std::make_shared<Indices>(batchedIndices), vulkanContext.device.graphicsQueue, graphicsCommandPool.commandPool);
 		isMainVertexBufferInitialized = true;
-
-		ecs.resetChangeFlag();
 	}
+	
+
+
 
 	mainVertexBuffer.bind(commandBuffers[currentFrame].commandBuffer);
 	mainIndexBuffer.bind(commandBuffers[currentFrame].commandBuffer);
@@ -194,23 +219,30 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 
 		objectStorageBuffers[currentFrame].copy(sizeof(objectSSBO) * ssbo.size(), ssbo.data());
 	}
-	
-	{
-		std::vector<lightSSBO> ssbo(1000);
 
-		lightingStorageBuffers[currentFrame].copy(sizeof(lightSSBO) * ssbo.size(), ssbo.data());
+	{
+		std::vector<lightSSBO> ssbo(100);
+		for (int i = 0; i < lightInfos.size(); ++i) {
+			ssbo[i] = {
+				.lightType = glm::vec4(lightInfos[i].type, 0.0f, 0.0f, 0.0f),
+				.lightDir = lightInfos[i].direction,
+				.lightPos = lightInfos[i].position,
+				.lightColor = lightInfos[i].color
+			};
+		}
+
+		lightStorageBuffers[currentFrame].copy(sizeof(lightSSBO) * ssbo.size(), ssbo.data());
 	}
 
 	{
 		globalUBO ubo{
 			.view = camera.getViewMatrix(),
 			.projection = camera.getProjectionMatrix(),
-			.lightPos = glm::vec4(4.0f, -3.0f, -4.0f, 0.0f),
-			.lightDir = glm::normalize(glm::vec4(-1.0f, -1.0f, -1.0f, 0.0f)),
 			.camPos = glm::vec4(camera.position, 0.0f),
 			.dimensions = glm::vec4(static_cast<float>(swapchain.swapchain.extent.width), static_cast<float>(swapchain.swapchain.extent.height), 0.0f, 0.0f),
 			.inverseProjection = camera.getInverseProjectionMatrix(),
-			.inverseView = camera.getInverseViewMatrix()
+			.inverseView = camera.getInverseViewMatrix(),
+			.numberOfEntities = glm::vec4(drawInfos.size(), lightInfos.size(), 0.0f, 0.0f)
 		};
 
 		globalUniformBuffers[currentFrame].copy(sizeof(ubo), &ubo);
@@ -263,8 +295,8 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 
 	for (const auto& info : drawInfos) {
 		PushConstantMVP push{
-			.uboIndex = info.uboIndex,
-			.textureIndex = 0 //TODO: Texture index from entity
+			.ssboIndex = info.ssboIndex,
+			.textureIndex = info.textureIndex
 		};
 
 		vkCmdPushConstants(commandBuffers[currentFrame].commandBuffer, gBufferPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantMVP), &push);
@@ -348,7 +380,7 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 
 		
 	PushConstantMVP push{
-		.uboIndex = 0,
+		.ssboIndex = 0,
 		.textureIndex = 0 //TODO: Texture index from entity
 	};
 	vkCmdPushConstants(commandBuffers[currentFrame].commandBuffer, lightingPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantMVP), &push);
@@ -433,6 +465,72 @@ void Renderer::endFrame()
 	currentFrame = (currentFrame + 1) % maxFramesInFlight;
 }
 
+void Renderer::handleResourcesUpload(ResourceManager& resourceManager, VkCommandBuffer& commandBuffer)
+{
+	images.reserve(images.size() + resourceManager.uploadQueue.size());
+
+
+	for (size_t i = 0; i < resourceManager.uploadQueue.size(); ++i) {
+		auto imageResource = resourceManager.uploadQueue.front();
+
+		imageResource->setGPUState(ResourceManager::ResourceState::LOADING);
+
+		//TODO: Reuse staging buffer
+		uint32_t imageSize = imageResource->width * imageResource->height * 4;
+		
+		stagingBuffer.copy(imageSize, imageResource->pixels);
+
+		images.emplace_back(new Image{vulkanContext.vulkanResources});
+
+		images.back()->initImage(
+			VK_IMAGE_TYPE_2D,
+			VK_FORMAT_R8G8B8A8_SRGB,
+			VkExtent3D{ static_cast<uint32_t>(imageResource->width), static_cast<uint32_t>(imageResource->height), 1 },
+			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+			VMA_MEMORY_USAGE_GPU_ONLY
+		);
+
+		images.back()->transitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+		);
+
+		images.back()->copyBufferToImage(
+			commandBuffer,
+			stagingBuffer.buffer,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			static_cast<uint32_t>(imageResource->width),
+			static_cast<uint32_t>(imageResource->height)
+		);
+
+		images.back()->transitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+		);
+
+		images.back()->initImageView(
+			VK_IMAGE_VIEW_TYPE_2D,
+			VK_FORMAT_R8G8B8A8_SRGB,
+			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+		);
+
+		descriptorManager.bindlessResourceDescriptorSet.update(
+			static_cast<uint32_t>(imageResource->type),
+			imageResource->getID(),
+			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			{ textureSampler, images.back()->imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL }
+		);
+
+		imageResource->setGPUState(ResourceManager::ResourceState::LOADED);
+
+		resourceManager.uploadQueue.pop();
+	}
+}
+
 void Renderer::recreateSwapchain()
 {
 	//TODO : Handle minimization properly and remake resources
@@ -501,13 +599,13 @@ void Renderer::initUniformBuffers()
 void Renderer::initStorageBuffers()
 {
 	objectStorageBuffers.reserve(maxFramesInFlight);
-	lightingStorageBuffers.reserve(maxFramesInFlight);
+	lightStorageBuffers.reserve(maxFramesInFlight);
 	for (size_t i = 0; i < maxFramesInFlight; ++i) {
 		objectStorageBuffers.emplace_back(vulkanContext.vulkanResources);
-		lightingStorageBuffers.emplace_back(vulkanContext.vulkanResources);
+		lightStorageBuffers.emplace_back(vulkanContext.vulkanResources);
 
 		objectStorageBuffers[i].initStorageBuffer(sizeof(objectSSBO) * 1000);
-		lightingStorageBuffers[i].initStorageBuffer(sizeof(lightSSBO) * 10);
+		lightStorageBuffers[i].initStorageBuffer(sizeof(lightSSBO) * 10);
 	}
 	
 }

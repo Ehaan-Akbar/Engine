@@ -11,6 +11,20 @@
 class FrameGraph
 {
 public:
+	
+	struct Resource {
+		std::string name;
+		Image image;
+	};
+
+	struct Pass {
+		std::string name;
+		std::vector<Resource*> inputs;
+		std::vector<Resource*> outputs;
+
+		std::function<void(VkCommandBuffer commandBuffer)> executeFunction;
+	};
+
 	friend class VulkanApp;
 	friend class Renderer;
 
@@ -19,7 +33,7 @@ public:
 
 	FrameGraph(VulkanResources& vulkanResources);
 	void initFrameGraph();
-	void execute(VkCommandBuffer commandBuffer);
+	void addPass();
 	void destroyFrameGraph();
 	~FrameGraph();
 
