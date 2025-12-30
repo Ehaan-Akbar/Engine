@@ -1,23 +1,36 @@
 #pragma once
 #include "Helper.h"
 #include "stb_image.h"
+#include "tiny_obj_loader.h"
+#include "tiny_gltf.h"
 #include <unordered_map>
 #include <vector>
 #include <queue>
 #include <array>
+#include "Component.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
+#include <cstring>
 
 
 class ResourceManager
 {
 public:
 
+	struct MeshResource {
+		std::shared_ptr<Vertices> vertices = std::make_shared<Vertices>();
+		std::shared_ptr<Indices> indices = std::make_shared<Indices>();
+		
+		uint32_t textureIndex;
+		uint32_t albedoIndex;
+		uint32_t roughnessIndex;
+		uint32_t normalIndex;
+		uint32_t occlusionIndex;
+		uint32_t emissiveIndex;
+	};
+
 	enum ResourceType {
-		TEXTURES = 0,
-		ALBEDOS = 1,
-		ROUGHNESS = 2,
-		NORMALS = 3,
-		OCCLUSIONS = 4,
-		EMISSIVES = 5
+		TEXTURES = 0
 	};
 
 	enum ResourceState {
@@ -49,6 +62,10 @@ private:
 		}
 
 		~ImageResource() {
+			free();
+		}
+
+		void free() {
 			if (pixels) {
 				stbi_image_free(pixels);
 			}
@@ -59,14 +76,19 @@ public:
 
 	ResourceManager();
 	std::shared_ptr<ImageResource> createImage(std::string&& path, ResourceType type);
+	std::shared_ptr<MeshResource> loadOBJ(const std::string&& file);
+	std::vector<std::shared_ptr<MeshResource>> loadGLTF(const std::string&& file);
 	void loadImage(std::shared_ptr<ImageResource> imageResource);
+	void loadImage(std::shared_ptr<ImageResource> imageResource, stbi_uc* pixels, int width, int height);
 	~ResourceManager();
+
+	
 
 	std::queue<std::shared_ptr<ImageResource>> uploadQueue;
 
 private:
 
-	std::array<std::vector<std::shared_ptr<ImageResource>>, 6> images;
+	std::array<std::vector<std::shared_ptr<ImageResource>>, 1> images;
 
 	static uint32_t idCounter;
 };

@@ -151,6 +151,12 @@
     <Filter Include="Source Files\Vulkan\Abstractions\Buffer\StagingBuffer">
       <UniqueIdentifier>{e9331c0d-da8c-4752-9319-0a316a92ae51}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Libraries\TinyGLTF">
+      <UniqueIdentifier>{7da3a3e0-4491-4ca9-901e-94eed77d259d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Libraries\Json">
+      <UniqueIdentifier>{2c97b978-6f41-44d2-aaa4-5f423b5d6442}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="VkBootstrap.cpp">
@@ -266,6 +272,15 @@
     </ClCompile>
     <ClCompile Include="StagingBuffer.cpp">
       <Filter>Source Files\Vulkan\Abstractions\Buffer\StagingBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="tiny_gltf.cpp">
+      <Filter>Source Files\Libraries\TinyGLTF</Filter>
+    </ClCompile>
+    <ClCompile Include="stb_image_write.cpp">
+      <Filter>Source Files\Libraries\StbImage</Filter>
+    </ClCompile>
+    <ClCompile Include="json.cpp">
+      <Filter>Source Files\Libraries\Json</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -388,6 +403,15 @@
     </ClInclude>
     <ClInclude Include="StagingBuffer.h">
       <Filter>Source Files\Vulkan\Abstractions\Buffer\StagingBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="tiny_gltf.h">
+      <Filter>Source Files\Libraries\TinyGLTF</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image_write.h">
+      <Filter>Source Files\Libraries\StbImage</Filter>
+    </ClInclude>
+    <ClInclude Include="json.hpp">
+      <Filter>Source Files\Libraries\Json</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

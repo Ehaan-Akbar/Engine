@@ -1,4 +1,5 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier : require
 
 vec2 positions[6] = vec2[](
 	vec2(-1.0, -1.0),
@@ -34,6 +35,14 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
 
 struct ObjectSSBO {
     mat4 model;
+    uint albedoIndex;
+    uint roughnessIndex;
+    uint normalIndex;
+    uint occlusionIndex;
+    uint emissiveIndex;
+	uint _pad0;
+    uint _pad1;
+    uint _pad2;
 };
 
 layout(set = 0, binding = 1) buffer ObjectBuffer {
@@ -48,7 +57,6 @@ layout(set = 2, binding = 3) uniform sampler2D depthImage;
 
 layout(push_constant) uniform Push {
     uint uboIndex;
-    uint textureIndex;
 } push;
 
 layout(location = 0) out vec2 fragUV;

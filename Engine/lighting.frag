@@ -20,6 +20,14 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
 
 struct ObjectSSBO {
     mat4 model;
+    uint albedoIndex;
+    uint roughnessIndex;
+    uint normalIndex;
+    uint occlusionIndex;
+    uint emissiveIndex;
+    uint _pad0;
+    uint _pad1;
+    uint _pad2;
 };
 
 //readonly??
@@ -47,7 +55,6 @@ layout(set = 2, binding = 4) uniform sampler2D depthImage;
 
 layout(push_constant) uniform Push {
     uint uboIndex;
-    uint textureIndex;
 } push;
 
 vec3 albedo;
@@ -83,6 +90,7 @@ LightResult directionalLight(LightSSBO light) {
 }
 
 LightResult pointLight(LightSSBO light) {
+
     return LightResult(vec3(0.0f, 0.0f, 0.0f),vec3(0.0f, 0.0f, 0.0f));
 }
 
@@ -137,11 +145,12 @@ void main() {
 
     float ambient = 0.1f;
 
-    diffuseStrength = 1.0f;
+    diffuseStrength = 0.5f;
     vec3 diffuse = vec3(0.0f, 0.0f, 0.0f);
 
-    specularStrength = 1.0ff;
-    shiny = 16.0f;
+    specularStrength = 1.0f;
+    shiny = (1.0 - material.r) * 16.0;
+    //shiny = 16.0f;
     vec3 specular = vec3(0.0f, 0.0f, 0.0f);
 
     for (int i = 0; i < globalUbo.numOfEntities.y; ++i) {

@@ -46,12 +46,7 @@ public:
 	};
 
 	enum RESOURCE_BINDING : uint32_t {
-		TEXTURES = 0,
-		ALBEDOS = 1,
-		ROUGHNESS = 2,
-		NORMALS = 3,
-		OCCLUSIONS = 4,
-		EMISSIVES = 5
+		TEXTURES = 0
 	};
 
 	DescriptorManager(VulkanResources& vulkanResources);

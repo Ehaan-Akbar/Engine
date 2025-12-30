@@ -157,6 +157,7 @@
     <ClCompile Include="IndexBuffer.cpp" />
     <ClCompile Include="Instance.cpp" />
     <ClCompile Include="Controller.cpp" />
+    <ClCompile Include="json.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -164,10 +165,12 @@
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="StagingBuffer.cpp" />
     <ClCompile Include="stb_image.cpp" />
+    <ClCompile Include="stb_image_write.cpp" />
     <ClCompile Include="StorageBuffer.cpp" />
     <ClCompile Include="Surface.cpp" />
     <ClCompile Include="Swapchain.cpp" />
     <ClCompile Include="System.cpp" />
+    <ClCompile Include="tiny_gltf.cpp" />
     <ClCompile Include="tiny_obj_loader.cpp" />
     <ClCompile Include="UniformBuffer.cpp" />
     <ClCompile Include="VertexBuffer.cpp" />
@@ -198,6 +201,7 @@
     <ClInclude Include="IndexBuffer.h" />
     <ClInclude Include="Instance.h" />
     <ClInclude Include="Controller.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="Pipeline.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderPass.h" />
@@ -205,10 +209,12 @@
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="StagingBuffer.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="StorageBuffer.h" />
     <ClInclude Include="Surface.h" />
     <ClInclude Include="Swapchain.h" />
     <ClInclude Include="System.h" />
+    <ClInclude Include="tiny_gltf.h" />
     <ClInclude Include="tiny_obj_loader.h" />
     <ClInclude Include="UniformBuffer.h" />
     <ClInclude Include="VertexBuffer.h" />

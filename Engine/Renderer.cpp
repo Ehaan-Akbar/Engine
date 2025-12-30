@@ -41,6 +41,8 @@ void Renderer::init()
 void Renderer::destroy()
 {
 	vkDeviceWaitIdle(vulkanContext.vulkanResources.device);
+
+	
 	// Make destroy idempotent by early-return if we've already cleaned up.
 	// We'll detect by checking whether sync objects vector is empty AND commandBuffers cleared.
 	if (imageAvailableSemaphores.empty() && commandBuffers.empty()) {
@@ -96,6 +98,7 @@ void Renderer::destroy()
 	}
 
 	// Destroy image views / images (Image::destroyImage should also be safe / idempotent)
+
 	gBufferAlbedoImage.destroyImage();
 	gBufferNormalImage.destroyImage();
 	gBufferMaterialImage.destroyImage();
@@ -116,6 +119,8 @@ void Renderer::destroy()
 	}
 
 	// mark other RAII-managed resources left to their destructors
+
+	
 }
 
 Renderer::~Renderer()
@@ -163,7 +168,7 @@ void Renderer::submit(ECS& ecs, Camera& camera, ResourceManager& resourceManager
 	batchedIndices.clear();
 
 	ecs.onEachEntity([&](std::shared_ptr<Entity> entity) {
-		const auto& l = ecs.getComponent<light>(entity);
+		const auto& l = ecs.getComponent<Light>(entity);
 		if (l) {
 			lightInfos.push_back({
 				.type = l->type,
@@ -173,16 +178,17 @@ void Renderer::submit(ECS& ecs, Camera& camera, ResourceManager& resourceManager
 				});
 			return;
 		}
-		const auto& t = ecs.getComponent<transform>(entity);
-		const auto& m = ecs.getComponent<mesh>(entity);
+		const auto& t = ecs.getComponent<Transform>(entity);
+		const auto& m = ecs.getComponent<Mesh>(entity);
+		const auto& ma = ecs.getComponent<Material>(entity);
 
 		drawInfos.push_back({
 			.indexCount = static_cast<uint32_t>(m->indices->size()),
 			.firstIndex = currentIndexOffset,
 			.vertexOffset = 0,
-			.modelMatrix = t->transformationMatrix(),
 			.ssboIndex = uboIndex++,
-			.textureIndex = m->textureIndex
+			.transform = t,
+			.material = ma
 			});
 
 		batchedVertices.insert(batchedVertices.end(), m->vertices->begin(), m->vertices->end());
@@ -206,16 +212,37 @@ void Renderer::submit(ECS& ecs, Camera& camera, ResourceManager& resourceManager
 	mainIndexBuffer.bind(commandBuffers[currentFrame].commandBuffer);
 
 
-
+	//Updating UBOs and SSBOs
+	descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::GLOBAL_UBO, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, { globalUniformBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
+	descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::OBJECT_SSBO, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, { objectStorageBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
+	descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::LIGHTING_SSBO, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, { lightStorageBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
 
 	//Writing to UBOs and SSBOs
 	{
 		std::vector<objectSSBO> ssbo(1000);
 		for (int i = 0; i < drawInfos.size(); ++i) {
+			auto& drawInfo = drawInfos[i];
 			ssbo[i] = {
-				.model = drawInfos[i].modelMatrix,
+				.model = drawInfo.transform->transformationMatrix(),
+				.albedoIndex = drawInfo.material->albedoIndex,
+				.roughnessIndex = drawInfo.material->roughnessIndex,
+				.normalIndex = drawInfo.material->normalIndex,
+				.occlusionIndex = drawInfo.material->occlusionIndex,
+				.emissiveIndex = drawInfo.material->emissiveIndex
 			};
+
 		}
+
+		/*for (size_t i = 0; i < std::min<size_t>(drawInfos.size(), 8); ++i) {
+			auto& d = drawInfos[i];
+			std::cout << "[SSBO] draw=" << d.ssboIndex
+				<< " albedo=" << d.material->albedoIndex
+				<< " normal=" << d.material->normalIndex
+				<< " roughness=" << d.material->roughnessIndex
+				<< " occlusion=" << d.material->occlusionIndex
+				<< " emissive=" << d.material->emissiveIndex
+				<< "\n";
+		}*/
 
 		objectStorageBuffers[currentFrame].copy(sizeof(objectSSBO) * ssbo.size(), ssbo.data());
 	}
@@ -247,6 +274,8 @@ void Renderer::submit(ECS& ecs, Camera& camera, ResourceManager& resourceManager
 
 		globalUniformBuffers[currentFrame].copy(sizeof(ubo), &ubo);
 	}
+
+	
 
 
 
@@ -296,7 +325,6 @@ void Renderer::submit(ECS& ecs, Camera& camera, ResourceManager& resourceManager
 	for (const auto& info : drawInfos) {
 		PushConstantMVP push{
 			.ssboIndex = info.ssboIndex,
-			.textureIndex = info.textureIndex
 		};
 
 		vkCmdPushConstants(commandBuffers[currentFrame].commandBuffer, gBufferPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantMVP), &push);
@@ -381,7 +409,6 @@ void Renderer::submit(ECS& ecs, Camera& camera, ResourceManager& resourceManager
 		
 	PushConstantMVP push{
 		.ssboIndex = 0,
-		.textureIndex = 0 //TODO: Texture index from entity
 	};
 	vkCmdPushConstants(commandBuffers[currentFrame].commandBuffer, lightingPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantMVP), &push);
 	vkCmdDraw(commandBuffers[currentFrame].commandBuffer, 6, 1, 0, 0);
@@ -467,21 +494,20 @@ void Renderer::endFrame()
 
 void Renderer::handleResourcesUpload(ResourceManager& resourceManager, VkCommandBuffer& commandBuffer)
 {
+	//TODO: Upload First then worry about rendering
 	images.reserve(images.size() + resourceManager.uploadQueue.size());
 
-
-	for (size_t i = 0; i < resourceManager.uploadQueue.size(); ++i) {
+	if (!resourceManager.uploadQueue.empty()) {
 		auto imageResource = resourceManager.uploadQueue.front();
 
 		imageResource->setGPUState(ResourceManager::ResourceState::LOADING);
 
-		//TODO: Reuse staging buffer
 		uint32_t imageSize = imageResource->width * imageResource->height * 4;
-		
 		stagingBuffer.copy(imageSize, imageResource->pixels);
 
 		images.emplace_back(new Image{vulkanContext.vulkanResources});
 
+		//std::cout << imageResource->width + " " << imageResource->height << "\n";
 		images.back()->initImage(
 			VK_IMAGE_TYPE_2D,
 			VK_FORMAT_R8G8B8A8_SRGB,
@@ -517,6 +543,14 @@ void Renderer::handleResourcesUpload(ResourceManager& resourceManager, VkCommand
 			VK_FORMAT_R8G8B8A8_SRGB,
 			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
 		);
+		//std::cout << '\n' << imageResource->getID() << std::endl;
+
+
+		/*uint32_t appendedIndex = static_cast<uint32_t>(images.size() - 1);
+		std::cout << "[TextureUpload] resID=" << imageResource->getID()
+			<< " appendedIndex=" << appendedIndex
+			<< " imageView=0x" << std::hex << images.back()->imageView << std::dec
+			<< " path=\"" << imageResource->path << "\"\n";*/
 
 		descriptorManager.bindlessResourceDescriptorSet.update(
 			static_cast<uint32_t>(imageResource->type),
@@ -526,6 +560,7 @@ void Renderer::handleResourcesUpload(ResourceManager& resourceManager, VkCommand
 		);
 
 		imageResource->setGPUState(ResourceManager::ResourceState::LOADED);
+		//imageResource->free();
 
 		resourceManager.uploadQueue.pop();
 	}
@@ -616,9 +651,12 @@ void Renderer::initSampler()
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerInfo.magFilter = VK_FILTER_LINEAR;
 	samplerInfo.minFilter = VK_FILTER_LINEAR;
-	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	/*samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;*/
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	samplerInfo.anisotropyEnable = VK_FALSE;
 	samplerInfo.maxAnisotropy = 1.0f;
 	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -665,6 +703,7 @@ void Renderer::initGBufferResources()
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 	gBufferNormalImage.initImageView(VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R16G16B16A16_SFLOAT, { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
 
+	//Roughness Metallic Occlusion Emissive
 	gBufferMaterialImage.initImage(VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, { swapchain.swapchain.extent.width, swapchain.swapchain.extent.height, 1 },
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 	gBufferMaterialImage.initImageView(VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });

@@ -52,9 +52,8 @@ struct MAX_RESOURCE_COUNT {
 };
 
 struct PushConstantMVP {
-	alignas(4) uint32_t ssboIndex;
-	alignas(4) uint32_t textureIndex;
-	alignas(8) uint32_t padding[2];
+	uint32_t ssboIndex;
+	uint32_t padding[3];
 };
 
 struct globalUBO {
@@ -70,6 +69,12 @@ struct globalUBO {
 
 struct objectSSBO {
 	glm::mat4 model;
+	uint32_t albedoIndex;
+	uint32_t roughnessIndex;
+	uint32_t normalIndex;
+	uint32_t occlusionIndex;
+	uint32_t emissiveIndex;
+	uint32_t padding[3];
 };
 
 //0 - Directional
@@ -110,10 +115,7 @@ public:
 		//TODO: Resources
 
 
-		// //Updating UBOs and SSBOs
-		descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::GLOBAL_UBO, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, { globalUniformBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
-		descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::OBJECT_SSBO, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, { objectStorageBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
-		descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::LIGHTING_SSBO, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, { lightStorageBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
+		
 
 		//Updating Target Descriptors
 		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::ALBEDO_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, gBufferAlbedoImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
@@ -224,13 +226,13 @@ private:
 		uint32_t indexCount;
 		uint32_t firstIndex;
 		uint32_t vertexOffset;
-		glm::mat4 modelMatrix;
 		uint32_t ssboIndex;
-		uint32_t textureIndex;
+		std::shared_ptr<Transform> transform;
+		std::shared_ptr<Material> material;
 	};
 
 	struct lightInfo {
-		light::LIGHT_TYPE type;
+		Light::LIGHT_TYPE type;
 		glm::vec4 direction;
 		glm::vec4 position;
 		glm::vec4 color;

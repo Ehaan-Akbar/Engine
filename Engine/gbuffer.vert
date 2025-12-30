@@ -23,6 +23,14 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
 
 struct ObjectSSBO {
     mat4 model;
+    uint albedoIndex;
+    uint roughnessIndex;
+    uint normalIndex;
+    uint occlusionIndex;
+    uint emissiveIndex;
+    uint _pad0;
+    uint _pad1;
+    uint _pad2;
 };
 
 layout(set = 0, binding = 1) buffer ObjectBuffer {
@@ -33,7 +41,6 @@ layout(set = 1, binding = 0) uniform sampler2D textures[];
 
 layout(push_constant) uniform Push {
     uint uboIndex;
-    uint textureIndex;
 } push;
 
 

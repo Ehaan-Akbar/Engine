@@ -25,7 +25,9 @@ void Device::initDevice()
 	descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 	descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
 	descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+	descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
 	descriptorIndexingFeatures.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+	descriptorIndexingFeatures.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
 
 
 	//Logical Device

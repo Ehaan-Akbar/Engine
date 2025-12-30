@@ -22,6 +22,14 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
 
 struct ObjectSSBO {
     mat4 model;
+    uint albedoIndex;
+    uint roughnessIndex;
+    uint normalIndex;
+    uint occlusionIndex;
+    uint emissiveIndex;
+    uint _pad0;
+    uint _pad1;
+    uint _pad2;
 };
 
 layout(set = 0, binding = 1) buffer ObjectBuffer {
@@ -32,14 +40,19 @@ layout(set = 1, binding = 0) uniform sampler2D textures[];
 
 layout(push_constant) uniform Push {
     uint uboIndex;
-    uint textureIndex;
 } push;
 
 
 
 void main() {
-    //outAlbedo = vec4(fragColor, 1.0);
-    outAlbedo = texture(textures[push.textureIndex], fragUV);
+    ObjectSSBO object = objectSSBOs[nonuniformEXT(push.uboIndex)];
+
+    outAlbedo = vec4(texture(textures[nonuniformEXT(object.albedoIndex)], fragUV));
+
     outNormal = vec4(normalize(fragNormalWorld) * 0.5 + 0.5, 1.0);
-    outMaterial = vec4(0.5, 0.0, 0.0 ,1.0);
+
+    vec4 roughnessMetallic = texture(textures[nonuniformEXT(object.roughnessIndex)], fragUV);
+    //r channel = metallic
+    //g channel = roughness
+    outMaterial = vec4(roughnessMetallic.g, roughnessMetallic.r, 0.0 ,0.0);
 }

@@ -20,8 +20,9 @@ public:
 
 	App();
 	void run();
-	float updateTiming();
 	~App();
+
+	float updateTiming();
 
 private:
 	Window* window;
@@ -35,17 +36,17 @@ private:
 	ECS* ecs;
 
 	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>();
-	std::shared_ptr<transform> transformComponent1 = std::make_shared<transform>();
-	std::shared_ptr<mesh> meshComponent1 = std::make_shared<mesh>();
-	std::shared_ptr<material> materialComponent1 = std::make_shared<material>();
+	std::shared_ptr<Transform> transformComponent1 = std::make_shared<Transform>();
+	std::shared_ptr<Mesh> meshComponent1 = std::make_shared<Mesh>();
+	std::shared_ptr<Material> materialComponent1 = std::make_shared<Material>();
 
 	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>();
-	std::shared_ptr<transform> transformComponent2 = std::make_shared<transform>();
-	std::shared_ptr<mesh> meshComponent2 = std::make_shared<mesh>();
-	std::shared_ptr<material> materialComponent2 = std::make_shared<material>();
+	std::shared_ptr<Transform> transformComponent2 = std::make_shared<Transform>();
+	std::shared_ptr<Mesh> meshComponent2 = std::make_shared<Mesh>();
+	std::shared_ptr<Material> materialComponent2 = std::make_shared<Material>();
 
 	std::shared_ptr<Entity> light1 = std::make_shared<Entity>();
-	std::shared_ptr<light> lightComponent1 = std::make_shared<light>();
+	std::shared_ptr<Light> lightComponent1 = std::make_shared<Light>();
 
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> currentTime = std::chrono::high_resolution_clock::now();
