@@ -16,13 +16,17 @@ public:
 	friend class App;
 
 	Image(VulkanResources& vulkanResources);
-	void initImage(VkImageType type, VkFormat format, VkExtent3D extent, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t mipLevels = 1, uint32_t arrayLayers = 1, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT, VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL);
+	void initImage(VkImageType type, VkFormat format, VkExtent3D extent, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t mipLevels = 1, uint32_t arrayLayers = 1, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT, VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL, VkImageCreateFlags flags = 0);
 	void initImageView(VkImageViewType type, VkFormat format, VkImageSubresourceRange subresourceRange);
 	void destroyImage();
 	~Image();
 
 	void transitionImageLayout(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subresourceRange);
 	void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImageLayout imageLayout, uint32_t width, uint32_t height, uint32_t depth = 1, uint32_t baseArrayLayer = 0);
+
+	VkImageView createFaceView(uint32_t face);
+	VkImageView createFaceMipView(uint32_t face, uint32_t mip);
+	void destroyTransientViews();
 
 
 private:
@@ -38,5 +42,7 @@ private:
 	VkFormat imageFormat;
 	VkFormat imageViewFormat;
 	VkExtent3D extent;
+
+	std::vector<VkImageView> transientViews;
 };
 

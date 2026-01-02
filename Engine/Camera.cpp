@@ -16,22 +16,17 @@ void Camera::setOrthographic(float left, float right, float top, float bottom, f
 	projectionMatrix[3][2] = -near / (far - near);
 }
 
-void Camera::setPerspective(float fovy, float aspect, float near , float far)
+void Camera::setPerspective(float fovy, float aspect, float near, float far)
 {
 	assert(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f);
-	const float tanHalfFovY = tan(fovy / 2.0f);
-	projectionMatrix = glm::mat4{ 1.0f };
-	projectionMatrix[0][0] = 1.0f / (aspect * tanHalfFovY);
-	projectionMatrix[1][1] = 1.0f / tanHalfFovY;
-	projectionMatrix[2][2] = far / (far - near);
-	projectionMatrix[2][3] = 1.0f;
-	projectionMatrix[3][2] = -(far * near) / (far - near);
+	projectionMatrix = glm::perspectiveLH_ZO(fovy, aspect, near, far);
+	//projectionMatrix[1][1] *= -1.0f;
 }
 
 void Camera::setViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up)
 {
 	const glm::vec3 w{ glm::normalize(direction) };
-	const glm::vec3 u{ glm::normalize(glm::cross(w, up)) };
+	const glm::vec3 u{ glm::normalize(glm::cross(up, w)) };
 	const glm::vec3 v{ glm::cross(w, u) };
 
 	viewMatrix = glm::mat4{ 1.f };
@@ -82,7 +77,7 @@ void Camera::setViewXYZ(glm::vec3 position, glm::vec3 rotation)
 
 void Camera::move(glm::vec3& delta)
 {
-	position += delta.x * getForwardVector() + delta.y * glm::vec3{0.0f, -1.0f, 0.0f} + delta.z * getRightVector();
+	position += delta.x * getForwardVector() + delta.y * glm::vec3{ 0.0f, -1.0f, 0.0f } + delta.z * getRightVector();
 }
 
 void Camera::move(glm::vec3&& delta)

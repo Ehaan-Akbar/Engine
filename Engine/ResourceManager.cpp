@@ -2,7 +2,7 @@
 
 ResourceManager::ResourceManager()
 {
-	loadImage(createImage("default.png", TEXTURES));
+	loadTexture(createImage("default.png", TEXTURES));
 }
 
 std::shared_ptr<ResourceManager::ImageResource> ResourceManager::createImage(std::string&& path, ResourceType type)
@@ -10,7 +10,8 @@ std::shared_ptr<ResourceManager::ImageResource> ResourceManager::createImage(std
 	auto textureResource = std::make_shared<ImageResource>();
 	textureResource->type = type;
 	textureResource->path = path;
-	textureResource->id = idCounter++;
+	textureResource->id = idCounters[type]++;
+	textureResource->layers.resize(type == TEXTURES ? 1 : 6);
 
 	images[type].push_back(textureResource);
 
@@ -72,6 +73,7 @@ std::shared_ptr<ResourceManager::MeshResource> ResourceManager::loadOBJ(const st
 				};
 			}
 
+
 			if (uniqueVertices.count(vertex) == 0) {
 				uniqueVertices[vertex] = static_cast<uint32_t>(mesh->vertices->size());
 				mesh->vertices->push_back(vertex);
@@ -120,7 +122,7 @@ std::vector<std::shared_ptr<ResourceManager::MeshResource>> ResourceManager::loa
 		}
 
 		auto imageRes = createImage("Path", TEXTURES);
-		loadImage(imageRes, pixels, image.width, image.height);
+		loadTexture(imageRes, pixels, image.width, image.height);
 
 		gltfToImageResourceID[i] = imageRes->getID();
 	}
@@ -142,6 +144,15 @@ std::vector<std::shared_ptr<ResourceManager::MeshResource>> ResourceManager::loa
 				const auto& buf = model.buffers.at(view.buffer);
 
 				normals = reinterpret_cast<const float*>(&buf.data[view.byteOffset + acc.byteOffset]);
+			}
+
+			const float* tangents = nullptr;
+			if (primitive.attributes.count("TANGENT")) {
+				const auto& acc = model.accessors.at(primitive.attributes.at("TANGENT"));
+				const auto& view = model.bufferViews.at(acc.bufferView);
+				const auto& buf = model.buffers.at(view.buffer);
+
+				tangents = reinterpret_cast<const float*>(&buf.data[view.byteOffset + acc.byteOffset]);
 			}
 
 			const float* uvs = nullptr;
@@ -168,6 +179,15 @@ std::vector<std::shared_ptr<ResourceManager::MeshResource>> ResourceManager::loa
 						normals[i * 3 + 0],
 						normals[i * 3 + 1],
 						normals[i * 3 + 2]
+					};
+				}
+
+				if (tangents) {
+					vertex.tangent = {
+						tangents[i * 4 + 0],
+						tangents[i * 4 + 1],
+						tangents[i * 4 + 2],
+						tangents[i * 4 + 3]
 					};
 				}
 
@@ -235,7 +255,7 @@ std::vector<std::shared_ptr<ResourceManager::MeshResource>> ResourceManager::loa
 	return meshes;
 }
 
-void ResourceManager::loadImage(std::shared_ptr<ImageResource> imageResource)
+void ResourceManager::loadTexture(std::shared_ptr<ImageResource> imageResource)
 {
 	if (imageResource->cpuState == ResourceState::UNLOADED) {
 		imageResource->cpuState = ResourceState::LOADING;
@@ -246,9 +266,9 @@ void ResourceManager::loadImage(std::shared_ptr<ImageResource> imageResource)
 			return;
 		}
 
-		imageResource->width = texWidth;
-		imageResource->height = texHeight;
-		imageResource->pixels = pixels;
+		imageResource->layers[0].width = texWidth;
+		imageResource->layers[0].height = texHeight;
+		imageResource->layers[0].pixels = pixels;
 
 		//stbi_image_free(pixels);
 		imageResource->cpuState = ResourceState::LOADED;
@@ -257,7 +277,7 @@ void ResourceManager::loadImage(std::shared_ptr<ImageResource> imageResource)
 	uploadQueue.push(imageResource);
 }
 
-void ResourceManager::loadImage(std::shared_ptr<ImageResource> imageResource, stbi_uc* pixels, int width, int height)
+void ResourceManager::loadTexture(std::shared_ptr<ImageResource> imageResource, stbi_uc* pixels, int width, int height)
 {
 	if (imageResource->cpuState == ResourceState::UNLOADED) {
 		imageResource->cpuState = ResourceState::LOADING;
@@ -265,11 +285,43 @@ void ResourceManager::loadImage(std::shared_ptr<ImageResource> imageResource, st
 			imageResource->cpuState = ResourceState::FAILED;
 			return;
 		}
-		imageResource->width = width;
-		imageResource->height = height;
-		imageResource->pixels = pixels;
+		imageResource->layers[0].width = width;
+		imageResource->layers[0].height = height;
+		imageResource->layers[0].pixels = pixels;
 
 		imageResource->cpuState = ResourceState::LOADED;
+	}
+
+	uploadQueue.push(imageResource);
+}
+
+void ResourceManager::loadCubeMap(std::shared_ptr<ImageResource> imageResource)
+{
+	static const char* cubemapFaceNames[6] = {
+		   "px", "nx",
+		   "py", "ny",
+		   "pz", "nz"
+	};
+
+	if (imageResource->cpuState == UNLOADED) {
+		imageResource->cpuState = LOADING;
+
+		for (size_t i = 0; i < 6; ++i) {
+			std::string path = imageResource->path + "_" + cubemapFaceNames[i] + ".png";
+
+			int texWidth, texHeight, texChannels;
+			stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+			if (!pixels) {
+				imageResource->cpuState = ResourceState::FAILED;
+				return;
+			}
+
+			imageResource->layers[i].width = texWidth;
+			imageResource->layers[i].height = texHeight;
+			imageResource->layers[i].pixels = pixels;
+
+			imageResource->cpuState = LOADED;
+		}
 	}
 
 	uploadQueue.push(imageResource);

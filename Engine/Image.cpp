@@ -5,7 +5,7 @@ Image::Image(VulkanResources& vulkanResources) : vulkanResources{ vulkanResource
 
 }
 
-void Image::initImage(VkImageType type, VkFormat format, VkExtent3D extent, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t mipLevels, uint32_t arrayLayers, VkSampleCountFlagBits samples, VkImageTiling tiling)
+void Image::initImage(VkImageType type, VkFormat format, VkExtent3D extent, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t mipLevels, uint32_t arrayLayers, VkSampleCountFlagBits samples, VkImageTiling tiling, VkImageCreateFlags flags)
 {
 	this->imageType = type;
 	this->imageFormat = format;
@@ -21,6 +21,7 @@ void Image::initImage(VkImageType type, VkFormat format, VkExtent3D extent, VkIm
 	imageInfo.samples = samples;
 	imageInfo.tiling = tiling;
 	imageInfo.usage = usage;
+	imageInfo.flags = flags;
 
 	VmaAllocationCreateInfo allocInfo{};
 	allocInfo.usage = memoryUsage;
@@ -128,4 +129,41 @@ void Image::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, Vk
 		1,
 		&region
 	);
+}
+
+VkImageView Image::createFaceView(uint32_t face)
+{
+	VkImageViewCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	info.image = image;
+	info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	info.format = imageFormat;
+	info.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, face, 1 };
+
+	VkImageView view;
+	vkCreateImageView(vulkanResources.device, &info, nullptr, &view);
+	transientViews.push_back(view);
+	return view;
+}
+
+VkImageView Image::createFaceMipView(uint32_t face, uint32_t mip)
+{
+	VkImageViewCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	info.image = image;
+	info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	info.format = imageFormat;
+	info.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, mip, 1, face, 1 };
+
+	VkImageView view;
+	vkCreateImageView(vulkanResources.device, &info, nullptr, &view);
+	transientViews.push_back(view);
+	return view;
+}
+
+void Image::destroyTransientViews()
+{
+	for (auto& view : transientViews) {
+		vkDestroyImageView(vulkanResources.device, view, nullptr);
+	}
 }

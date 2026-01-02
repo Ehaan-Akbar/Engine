@@ -157,6 +157,33 @@
     <Filter Include="Source Files\Libraries\Json">
       <UniqueIdentifier>{2c97b978-6f41-44d2-aaa4-5f423b5d6442}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Vulkan\Renderer\Pass">
+      <UniqueIdentifier>{a271206b-1709-4a80-93bc-d204a580d7c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shaders\G-Buffer">
+      <UniqueIdentifier>{5c1d74b0-2b02-4ba6-ac82-0e79f351ccc4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shaders\Lighting">
+      <UniqueIdentifier>{05a05f18-5b5e-4d18-a995-e80d58b89476}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shaders\Blit/Post-Processing">
+      <UniqueIdentifier>{efa349bc-cce6-4d3e-a5af-e021dd97c2ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shaders\Skybox">
+      <UniqueIdentifier>{4477ab04-fc16-4ab6-a567-c2c0d8e4eb33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shaders\Skybox\Preprocessing">
+      <UniqueIdentifier>{b0003040-0d8b-46cb-b05b-967c29d3ea85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shaders\Skybox\Preprocessing\Irradiance">
+      <UniqueIdentifier>{59996337-aefd-4dad-abd9-31e568f84c38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shaders\Skybox\Preprocessing\Prefilter">
+      <UniqueIdentifier>{68b5e35c-eae4-40a4-b526-999a536e6fbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shaders\Skybox\Preprocessing\BRDF-LUT">
+      <UniqueIdentifier>{ed848729-bc86-4f45-949b-20f3b7ba89f4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="VkBootstrap.cpp">
@@ -418,23 +445,47 @@
     <None Include="compile.bat">
       <Filter>Resource Files\Scripts</Filter>
     </None>
-    <None Include="blit.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="blit.frag">
-      <Filter>Resource Files\Shaders</Filter>
+    <None Include="gbuffer.frag">
+      <Filter>Resource Files\Shaders\G-Buffer</Filter>
     </None>
     <None Include="gbuffer.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="gbuffer.frag">
-      <Filter>Resource Files\Shaders</Filter>
+      <Filter>Resource Files\Shaders\G-Buffer</Filter>
     </None>
     <None Include="lighting.frag">
-      <Filter>Resource Files\Shaders</Filter>
+      <Filter>Resource Files\Shaders\Lighting</Filter>
     </None>
     <None Include="lighting.vert">
-      <Filter>Resource Files\Shaders</Filter>
+      <Filter>Resource Files\Shaders\Lighting</Filter>
+    </None>
+    <None Include="skybox.vert">
+      <Filter>Resource Files\Shaders\Skybox</Filter>
+    </None>
+    <None Include="skybox.frag">
+      <Filter>Resource Files\Shaders\Skybox</Filter>
+    </None>
+    <None Include="blit.frag">
+      <Filter>Resource Files\Shaders\Blit/Post-Processing</Filter>
+    </None>
+    <None Include="blit.vert">
+      <Filter>Resource Files\Shaders\Blit/Post-Processing</Filter>
+    </None>
+    <None Include="irradiance.frag">
+      <Filter>Resource Files\Shaders\Skybox\Preprocessing\Irradiance</Filter>
+    </None>
+    <None Include="irradiance.vert">
+      <Filter>Resource Files\Shaders\Skybox\Preprocessing\Irradiance</Filter>
+    </None>
+    <None Include="brdfLUT.frag">
+      <Filter>Resource Files\Shaders\Skybox\Preprocessing\BRDF-LUT</Filter>
+    </None>
+    <None Include="brdfLUT.vert">
+      <Filter>Resource Files\Shaders\Skybox\Preprocessing\BRDF-LUT</Filter>
+    </None>
+    <None Include="prefilter.frag">
+      <Filter>Resource Files\Shaders\Skybox\Preprocessing\Prefilter</Filter>
+    </None>
+    <None Include="prefilter.vert">
+      <Filter>Resource Files\Shaders\Skybox\Preprocessing\Prefilter</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

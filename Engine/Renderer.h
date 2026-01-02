@@ -51,9 +51,16 @@ struct MAX_RESOURCE_COUNT {
 	}
 };
 
-struct PushConstantMVP {
+struct PushConstant {
 	uint32_t ssboIndex;
-	uint32_t padding[3];
+	uint32_t skyboxIndex;
+	uint32_t padding[2];
+};
+
+struct SkyboxPreprocessPushConstant {
+	uint32_t faceIndex;
+	uint32_t mipLevel;
+	uint32_t paddingsigmasobkisibidohio[2];
 };
 
 struct globalUBO {
@@ -103,10 +110,12 @@ public:
 	~Renderer();
 
 	bool beginFrame();
-	void submit(ECS& ecs, Camera& camera, ResourceManager& resourceManager);
+	void submit(ECS& ecs, Camera& camera);
 	void endFrame();
 
-	void handleResourcesUpload(ResourceManager& resourceManager, VkCommandBuffer& commandBuffer);
+	bool preprocess(ResourceManager& resourceManager);
+	bool handleResourcesUpload(ResourceManager& resourceManager, VkCommandBuffer& commandBuffer);
+	bool computeSkyBoxMaps(VkCommandBuffer& commandBuffer);
 
 
 	void recreateSwapchain();
@@ -123,7 +132,9 @@ public:
 		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::MATERIAL_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, gBufferMaterialImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
 		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::LIGHTING_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, lightingImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
 		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::DEPTH_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { depthSampler, gBufferDepthImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
-	
+		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::SKYBOX_IRRADIANCE_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { cubemapSampler, irradianceCubeMapImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::SKYBOX_PREFILTER_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { cubemapSampler, prefilterCubeMapImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::SKYBOX_LUT_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, brdfLUTImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
 	
 	}
 
@@ -145,6 +156,7 @@ private:
 	void initSampler();
 	VkSampler textureSampler;
 	VkSampler depthSampler;
+	VkSampler cubemapSampler;
 
 	//Swapchain / Blit Pass
 	std::vector<VkImage> swapchainImages;
@@ -172,8 +184,14 @@ private:
 	void initGBufferPipeline();
 	//G-Buffer
 
+	//Skybox
+	Pipeline skyboxPipeline{ vulkanContext.vulkanResources };
+	void initSkyboxPipeline();
+	//Skybox
+
 	//Lighting
 	Image lightingImage{ vulkanContext.vulkanResources };
+	Image lightingDepthImage{ vulkanContext.vulkanResources };
 
 	Framebuffer lightingFramebuffer{ vulkanContext.vulkanResources };
 	RenderPass lightingRenderPass{ vulkanContext.vulkanResources };
@@ -184,6 +202,26 @@ private:
 	void initLightingPipeline();
 	//Lighting
 
+	//IBL
+	Image irradianceCubeMapImage{ vulkanContext.vulkanResources };
+	Image prefilterCubeMapImage{ vulkanContext.vulkanResources };
+	Image brdfLUTImage{ vulkanContext.vulkanResources };
+
+	std::vector<Framebuffer> irradianceFramebuffers;
+	std::vector<std::vector<Framebuffer>> prefilterFramebuffers;
+	Framebuffer lutFramebuffer{ vulkanContext.vulkanResources };
+	RenderPass irradiancePrefilterRenderPass{ vulkanContext.vulkanResources };
+	RenderPass lutRenderPass{ vulkanContext.vulkanResources };
+	Pipeline irradiancePipeline{ vulkanContext.vulkanResources };
+	Pipeline prefilterPipeline{ vulkanContext.vulkanResources };
+	Pipeline lutPipeline{ vulkanContext.vulkanResources };
+
+	void initPreprocessIBLResources();
+	void initPreprocessIBLPasses();
+	void initPreprocessIBLPipelines();
+
+	//IBL
+
 	DescriptorManager descriptorManager{ vulkanContext.vulkanResources };
 
 	//Images
@@ -193,6 +231,7 @@ private:
 
 	CommandPool graphicsCommandPool{ vulkanContext.vulkanResources };
 	std::vector<CommandBuffer> commandBuffers;
+	CommandBuffer initializationCommandBuffer{ vulkanContext.vulkanResources, graphicsCommandPool.commandPool };
 
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;

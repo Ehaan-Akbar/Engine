@@ -32,7 +32,7 @@ void DescriptorManager::initDescriptorPool()
 		{
 			{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
 			{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 + 1},
-			{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6000 + 5}
+			{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6000 + 6000 + 8}
 		},
 		3, // 3 sets
 		VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT); // For bindless
@@ -91,16 +91,24 @@ void DescriptorManager::initGlobalDescriptorSet() //Non-Bindless
 
 void DescriptorManager::initBindlessResourceDescriptorSet() //Bindless
 {
-	std::array<VkDescriptorSetLayoutBinding, 1> bindings{};
-	//Binding 0 - Textures
+	std::array<VkDescriptorSetLayoutBinding, 2> bindings{};
+	//Binding 0 - 2D Textures
 	bindings[0].binding = 0;
 	bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	bindings[0].descriptorCount = 6000;
 	bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	bindings[0].pImmutableSamplers = nullptr;
 
+	//Binding 0 - Cubemaps
+	bindings[1].binding = 1;
+	bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	bindings[1].descriptorCount = 6000;
+	bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	bindings[1].pImmutableSamplers = nullptr;
 
-	std::array<VkDescriptorBindingFlags, 1> bindingFlags = {
+
+	std::array<VkDescriptorBindingFlags, 2> bindingFlags = {
+		VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT,
 		VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT
 	};
 
@@ -126,7 +134,7 @@ void DescriptorManager::initBindlessResourceDescriptorSet() //Bindless
 
 void DescriptorManager::initTargetDescriptorSet() //Non-Bindless
 {
-	std::array<VkDescriptorSetLayoutBinding, 5> bindings{};
+	std::array<VkDescriptorSetLayoutBinding, 8> bindings{};
 	//Binding 0 - Albedo Image
 	bindings[0].binding = 0;
 	bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -161,6 +169,27 @@ void DescriptorManager::initTargetDescriptorSet() //Non-Bindless
 	bindings[4].descriptorCount = 1;
 	bindings[4].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	bindings[4].pImmutableSamplers = nullptr;
+
+	//Binding 5 - Skybox Irradiance Image
+	bindings[5].binding = 5;
+	bindings[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	bindings[5].descriptorCount = 1;
+	bindings[5].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	bindings[5].pImmutableSamplers = nullptr;
+
+	//Binding 6 - Skybox Prefilter Image
+	bindings[6].binding = 6;
+	bindings[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	bindings[6].descriptorCount = 1;
+	bindings[6].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	bindings[6].pImmutableSamplers = nullptr;
+
+	//Binding 7 - Skybox LUT Image
+	bindings[7].binding = 7;
+	bindings[7].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	bindings[7].descriptorCount = 1;
+	bindings[7].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	bindings[7].pImmutableSamplers = nullptr;
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{};
 	bindingFlagsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;

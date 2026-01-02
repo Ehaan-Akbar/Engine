@@ -30,7 +30,8 @@ public:
 	};
 
 	enum ResourceType {
-		TEXTURES = 0
+		TEXTURES = 0,
+		CUBE_MAP = 1,
 	};
 
 	enum ResourceState {
@@ -41,14 +42,19 @@ public:
 	};
 
 private:
+	struct ImageLayer {
+		int width, height;
+		stbi_uc* pixels;
+	};
+
 	struct ImageResource {
+		//Implicitly assumed texture = 1 array layer, cubemap = 6 array layers
 		ResourceType type;
 		ResourceState cpuState = ResourceState::UNLOADED;
 		ResourceState gpuState = ResourceState::UNLOADED;
 
 		std::string path;
-		int width, height;
-		stbi_uc* pixels;
+		std::vector<ImageLayer> layers;
 
 		uint32_t refCount = 0;
 		uint32_t id;
@@ -66,8 +72,8 @@ private:
 		}
 
 		void free() {
-			if (pixels) {
-				stbi_image_free(pixels);
+			for (auto& layer : layers) {
+				stbi_image_free(layer.pixels);
 			}
 		}
 	};
@@ -78,8 +84,9 @@ public:
 	std::shared_ptr<ImageResource> createImage(std::string&& path, ResourceType type);
 	std::shared_ptr<MeshResource> loadOBJ(const std::string&& file);
 	std::vector<std::shared_ptr<MeshResource>> loadGLTF(const std::string&& file);
-	void loadImage(std::shared_ptr<ImageResource> imageResource);
-	void loadImage(std::shared_ptr<ImageResource> imageResource, stbi_uc* pixels, int width, int height);
+	void loadTexture(std::shared_ptr<ImageResource> imageResource);
+	void loadTexture(std::shared_ptr<ImageResource> imageResource, stbi_uc* pixels, int width, int height);
+	void loadCubeMap(std::shared_ptr<ImageResource> imageResource);
 	~ResourceManager();
 
 	
@@ -88,9 +95,8 @@ public:
 
 private:
 
-	std::array<std::vector<std::shared_ptr<ImageResource>>, 1> images;
+	std::array<std::vector<std::shared_ptr<ImageResource>>, 2> images;
 
-	static uint32_t idCounter;
+	std::array<uint32_t, 2> idCounters;
 };
 
-inline uint32_t ResourceManager::idCounter = 0;

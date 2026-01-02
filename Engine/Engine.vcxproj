@@ -227,11 +227,19 @@
   <ItemGroup>
     <None Include="blit.frag" />
     <None Include="blit.vert" />
+    <None Include="brdfLUT.frag" />
+    <None Include="brdfLUT.vert" />
     <None Include="compile.bat" />
     <None Include="gbuffer.frag" />
     <None Include="gbuffer.vert" />
+    <None Include="irradiance.frag" />
+    <None Include="irradiance.vert" />
     <None Include="lighting.frag" />
     <None Include="lighting.vert" />
+    <None Include="prefilter.frag" />
+    <None Include="prefilter.vert" />
+    <None Include="skybox.frag" />
+    <None Include="skybox.vert" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Engine.rc" />

@@ -10,6 +10,9 @@ Controller::Controller(GLFWwindow* window, Camera* camera)
 void Controller::handleKeyboardInputs(float dt)
 {
 	float speed = 3.0f * dt;
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+		speed *= 10.0f;
+	}
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		camera->move({ 0.0f, 0.0f, speed });
 	}
