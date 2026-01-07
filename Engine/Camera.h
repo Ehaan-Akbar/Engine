@@ -13,7 +13,7 @@ public:
 
 	Camera();
 	void setOrthographic(float left, float right, float top, float bottom, float near, float far);
-	void setPerspective(float fovy, float aspect, float near, float far);
+	
 	void setViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up = glm::vec3{ 0.0f, -1.0f, 0.0f });
 	void setViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 up = glm::vec3{ 0.0f, -1.0f, 0.0f });
 	void setViewXYZ(glm::vec3 position, glm::vec3 rotation);
@@ -26,41 +26,39 @@ public:
 
 	~Camera();
 
-	glm::mat4& getProjectionMatrix() { return projectionMatrix; }
-	glm::mat4& getViewMatrix() {
-		//viewMatrix = glm::yawPitchRoll(rotation.x, rotation.y, rotation.z) * glm::translate(glm::mat4(1.0f), -position);
-		viewMatrix = glm::mat4(1.0f);
-		viewMatrix = glm::rotate(viewMatrix, rotation.y, glm::vec3(1.0f, 0.0f, 0.0f));
-		viewMatrix = glm::rotate(viewMatrix, rotation.x, glm::vec3(0.0f, 1.0f, 0.0f));
-		viewMatrix = glm::translate(viewMatrix, -position);
+	void setPerspective(float fovy, float aspect, float near) {
+		assert(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f);
+		projectionMatrix = glm::infinitePerspectiveLH_ZO(fovy, aspect, near);
+		projectionMatrix[1][1] *= -1.0f;
+	}
 
+	glm::mat4 getProjectionMatrix() { return projectionMatrix; }
+	glm::mat4 getViewMatrix() {
+		viewMatrix = glm::lookAtLH(position, position + getForwardVector(), glm::vec3(0.0, 1.0, 0.0));
 		return viewMatrix;
 	}
-	glm::mat4& getInverseProjectionMatrix() {
-		inverseProjectionMatrix = glm::inverse(projectionMatrix);
+	glm::mat4 getInverseProjectionMatrix() {
+		inverseProjectionMatrix = glm::inverse(getProjectionMatrix());
 		return inverseProjectionMatrix;
 	}
 
-	glm::mat4& getInverseViewMatrix() {
+	glm::mat4 getInverseViewMatrix() {
 		inverseViewMatrix = glm::inverse(getViewMatrix());
 		return inverseViewMatrix;
 	}
 
 	glm::vec3 getForwardVector() {
-		return glm::normalize(glm::vec3{ glm::cos(rotation.y) * glm::cos(rotation.x), glm::sin(rotation.y), glm::cos(rotation.y) * glm::sin(rotation.x) });
+		return glm::normalize(glm::vec3{ glm::cos(pitch) * glm::sin(yaw), glm::sin(pitch), glm::cos(pitch) * glm::cos(yaw) });
 	}
 
 	glm::vec3 getRightVector() {
-		return glm::normalize(glm::cross(getForwardVector(), glm::vec3{ 0.0f, 1.0f, 0.0f }));
-	}
-
-	glm::vec3 getUpVector() {
-		return glm::normalize(glm::cross(getRightVector(), getUpVector()));
+		return glm::normalize(glm::cross(glm::vec3{ 0.0f, 1.0f, 0.0f }, getForwardVector()));
 	}
 
 
 	glm::vec3 position = { 0.0f ,0.0f, 0.0f };
-	glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
+	float pitch = 0.0f;
+	float yaw = 0.0f;
 
 private:
 

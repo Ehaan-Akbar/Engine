@@ -55,6 +55,7 @@ layout(set = 2, binding = 4) uniform sampler2D depthImage;
 layout(set = 2, binding = 5) uniform samplerCube irradianceCubeMap;
 layout(set = 2, binding = 6) uniform samplerCube prefilterCubeMap;
 layout(set = 2, binding = 7) uniform sampler2D brdfLUTMap;
+layout(set = 2, binding = 8) uniform sampler2D positionImage;
 
 layout(push_constant) uniform Push {
     uint uboIndex;
@@ -84,32 +85,32 @@ struct LightResult {
 };
 
 LightResult directionalLight(LightSSBO light) {
-    vec3 lightDir = light.direction.xyz;
+    vec3 lightDir = -light.direction.xyz;
     vec3 diffuse = max(dot(normal, lightDir), 0.0) * light.color.xyz;
 
     vec3 viewDir = normalize(camPos - fragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
     vec3 specular = pow(max(dot(viewDir, reflectDir), 0.0), shiny) * light.color.xyz;
 
-    return LightResult(diffuse, specular);
+    return LightResult(diffuse * light.color.w, specular * light.color.w);
 }
 
 LightResult pointLight(LightSSBO light) {
     vec3 lightDir = normalize(light.position.xyz - fragPos);
-    vec3 diffuse = max(dot(normal, lightDir), 0.0) * light.color.xyz;
+    float diffuse = max(dot(normal, lightDir), 0.0);
 
     vec3 viewDir = normalize(camPos - fragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
-    vec3 specular = pow(max(dot(viewDir, reflectDir), 0.0), shiny) * light.color.xyz;
+    float specular = pow(max(dot(viewDir, reflectDir), 0.0), shiny);
 
     float constant = 1.0;
-    float linear = 0.09;
-    float quadratic = 0.032;
+    float linear = 0.0009;
+    float quadratic = 0.0032;
 
     float distance = length(light.position.xyz - fragPos);
     float attenuation = 1.0 / (constant + linear * distance + quadratic * distance * distance);
 
-    return LightResult(diffuse * attenuation, specular * attenuation);
+    return LightResult(diffuse * light.color.xyz * light.color.w * attenuation, specular * light.color.xyz * light.color.w * attenuation);
 }
 
 LightResult spotLight(LightSSBO light) {
@@ -126,7 +127,7 @@ vec3 FresnelSchlick(float cosTheta, vec3 F0) {
 }
 
 vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
-    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
@@ -191,15 +192,18 @@ void main() {
     normal = texture(
         normalImage,
         fragUV
-    ).xyz * 2.0 - 1.0; // decode if stored in [0,1]
+    ).xyz;// * 2.0 - 1.0; // decode if stored in [0,1]
 
     material = texture(
         materialImage,
         fragUV
     );
+
+    //normal = vec3(0, 1, 0);
+    //normal = normalize(cross(dFdx(normal), dFdy(normal)));
     
-    float roughness = material.r;
-    float metallic = material.g;
+    float roughness = material.g;
+    float metallic = material.b;
     
 
 
@@ -230,15 +234,15 @@ void main() {
 
 
 
-   /*float ambient = 0.0f;
+    float ambient = 0.0f;
 
-    diffuseStrength = 0.5f;
+    diffuseStrength = 1.0f;
     vec3 diffuse = vec3(0.0f, 0.0f, 0.0f);
 
-    specularStrength = 1.0f;
+    specularStrength = 0.5f;
     shiny = 16.0;
-    //shiny = 16.0f;
     vec3 specular = vec3(0.0f, 0.0f, 0.0f);
+
 
     for (int i = 0; i < globalUbo.numOfEntities.y; ++i) {
         LightSSBO light = lightSSBOs[i];
@@ -257,17 +261,19 @@ void main() {
         diffuse += lighting.diffuse;
         specular += lighting.specular;
 
-    }*/
+    }
+
+    
 
 
-    vec3 V = normalize(globalUbo.camPos.xyz - fragPos);
+    vec3 V = normalize(camPos - fragPos);
     vec3 color = vec3(0.0, 0.0, 0.0);
     for (int i = 0; i < globalUbo.numOfEntities.y; ++i) {
         LightSSBO light = lightSSBOs[i];
 
         
 
-        color += calculatePBR(normal, V, fragPos, albedo, metallic, roughness, light);
+        //color += calculatePBR(normal, V, fragPos, albedo, metallic, roughness, light);
     }
 
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
@@ -283,16 +289,24 @@ void main() {
     vec3 prefilteredColor = textureLod(prefilterCubeMap, R, roughness * 4).rgb;
     vec2 brdf = texture(brdfLUTMap, vec2(max(dot(normal, V), 0.0), roughness)).rg;
     vec3 specularIBL = prefilteredColor * (F * brdf.x + brdf.y);
-    //float specularStrength = 1.0 - roughness;
-    //specularIBL *= specularStrength;
 
     color += diffuseIBL + specularIBL;
+
+
     
 
+    vec3 direct = albedo * (ambient + diffuseStrength*diffuse + specularStrength*specular);
+    vec3 indirect = color;
+    outColor = vec4(direct + 0.05*indirect, 1.0);
 
-    //outColor = vec4(albedo * (ambient + diffuseStrength*diffuse + specularStrength*specular), 1.0);
-    outColor = vec4(color, 1.0);
-    //outColor = vec4(vec3(roughness), 1.0);
+    //debug views
+    //fragPos = vec3(-100, 0, 0);
+    //outColor = vec4(normal, 1.0);
+    //outColor = vec4(albedo, 1.0);
+    //outColor = vec4(vec3(metallic), 1.0);
+    //outColor = vec4(abs(fragPos)/500, 1.0);
+    //outColor = vec4(abs(fragPos)/500, 1.0);
+    //outColor = vec4(vec3(depth), 0.0);
 }
 
 

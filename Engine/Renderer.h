@@ -135,7 +135,8 @@ public:
 		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::SKYBOX_IRRADIANCE_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { cubemapSampler, irradianceCubeMapImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
 		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::SKYBOX_PREFILTER_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { cubemapSampler, prefilterCubeMapImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
 		descriptorManager.targetDescriptorSet.update(DescriptorManager::TARGET_BINDING::SKYBOX_LUT_IMAGE, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, brdfLUTImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
-	
+		descriptorManager.targetDescriptorSet.update(8, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, { textureSampler, gBufferPositionImage.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL });
+
 	}
 
 public:
@@ -174,6 +175,7 @@ private:
 	Image gBufferNormalImage{ vulkanContext.vulkanResources };
 	Image gBufferMaterialImage{ vulkanContext.vulkanResources };
 	Image gBufferDepthImage{ vulkanContext.vulkanResources };
+	Image gBufferPositionImage{ vulkanContext.vulkanResources };
 
 	Framebuffer gBufferFramebuffer{ vulkanContext.vulkanResources };
 	RenderPass gBufferRenderPass{ vulkanContext.vulkanResources };

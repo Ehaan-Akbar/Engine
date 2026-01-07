@@ -13,6 +13,9 @@ void Controller::handleKeyboardInputs(float dt)
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
 		speed *= 10.0f;
 	}
+	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+		speed *= 100.0f;
+	}
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		camera->move({ 0.0f, 0.0f, speed });
 	}
@@ -55,7 +58,7 @@ void Controller::handleMouseInputs()
 	lastY = mY;
 
 
-	camera->rotate({ -deltaX, deltaY, 0.0f });
+	camera->rotate({ deltaX, -deltaY, 0.0f });
 }
 
 Controller::~Controller()

@@ -16,13 +16,6 @@ void Camera::setOrthographic(float left, float right, float top, float bottom, f
 	projectionMatrix[3][2] = -near / (far - near);
 }
 
-void Camera::setPerspective(float fovy, float aspect, float near, float far)
-{
-	assert(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f);
-	projectionMatrix = glm::perspectiveLH_ZO(fovy, aspect, near, far);
-	//projectionMatrix[1][1] *= -1.0f;
-}
-
 void Camera::setViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up)
 {
 	const glm::vec3 w{ glm::normalize(direction) };
@@ -77,22 +70,24 @@ void Camera::setViewXYZ(glm::vec3 position, glm::vec3 rotation)
 
 void Camera::move(glm::vec3& delta)
 {
-	position += delta.x * getForwardVector() + delta.y * glm::vec3{ 0.0f, -1.0f, 0.0f } + delta.z * getRightVector();
+	position += delta.x * getRightVector() + delta.y * glm::vec3{ 0.0f, 1.0f, 0.0f } + delta.z * getForwardVector();
 }
 
 void Camera::move(glm::vec3&& delta)
 {
-	position += delta.x * getForwardVector() + delta.y * glm::vec3{ 0.0f, -1.0f, 0.0f } + delta.z * getRightVector();
+	position += delta.x * getRightVector() + delta.y * glm::vec3{ 0.0f, 1.0f, 0.0f } + delta.z * getForwardVector();
 }
 
 void Camera::rotate(glm::vec3& delta)
 {
-	rotation += delta;
+	pitch += delta.y;
+	yaw += delta.x;
 }
 
 void Camera::rotate(glm::vec3&& delta)
 {
-	rotation += delta;
+	pitch += delta.y;
+	yaw += delta.x;
 }
 
 Camera::~Camera()

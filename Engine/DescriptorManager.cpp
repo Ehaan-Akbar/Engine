@@ -32,7 +32,7 @@ void DescriptorManager::initDescriptorPool()
 		{
 			{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
 			{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 + 1},
-			{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6000 + 6000 + 8}
+			{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6000 + 6000 + 9}
 		},
 		3, // 3 sets
 		VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT); // For bindless
@@ -134,7 +134,7 @@ void DescriptorManager::initBindlessResourceDescriptorSet() //Bindless
 
 void DescriptorManager::initTargetDescriptorSet() //Non-Bindless
 {
-	std::array<VkDescriptorSetLayoutBinding, 8> bindings{};
+	std::array<VkDescriptorSetLayoutBinding, 9> bindings{};
 	//Binding 0 - Albedo Image
 	bindings[0].binding = 0;
 	bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -190,6 +190,13 @@ void DescriptorManager::initTargetDescriptorSet() //Non-Bindless
 	bindings[7].descriptorCount = 1;
 	bindings[7].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	bindings[7].pImmutableSamplers = nullptr;
+
+	//Binding 8 - Friggin position image 
+	bindings[8].binding = 8;
+	bindings[8].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	bindings[8].descriptorCount = 1;
+	bindings[8].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	bindings[8].pImmutableSamplers = nullptr;
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{};
 	bindingFlagsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;

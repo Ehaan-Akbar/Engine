@@ -32,7 +32,7 @@ vec3 integrateIrradiance(vec3 normal) {
         sampleDir.y = sin(theta) * sin(phi);
         sampleDir.z = cos(theta);
 
-        vec3 up = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+        vec3 up = abs(normal.z) > 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
         vec3 tangent = normalize(cross(up, normal));
         vec3 bitangent = cross(normal, tangent);
 

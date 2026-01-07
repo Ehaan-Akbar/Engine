@@ -292,11 +292,12 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 
 
 
-	VkClearValue clearColors[4];
+	VkClearValue clearColors[5];
 	clearColors[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
 	clearColors[1].color = { 0.0f, 0.0f, 0.0f, 1.0f };
 	clearColors[2].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-	clearColors[3].depthStencil = { 1.0f, 0 };
+	clearColors[3].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	clearColors[4].depthStencil = { 1.0f, 0 };
 
 	VkViewport viewport{};
 	viewport.x = 0.0f;
@@ -319,7 +320,7 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 	gBufferRenderPassBeginInfo.framebuffer = gBufferFramebuffer.framebuffer;
 	gBufferRenderPassBeginInfo.renderArea.offset = { 0,0 };
 	gBufferRenderPassBeginInfo.renderArea.extent = swapchain.swapchain.extent;
-	gBufferRenderPassBeginInfo.clearValueCount = 4;
+	gBufferRenderPassBeginInfo.clearValueCount = 5;
 	gBufferRenderPassBeginInfo.pClearValues = clearColors;
 
 	vkCmdBeginRenderPass(commandBuffers[currentFrame].commandBuffer, &gBufferRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -347,13 +348,14 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 	vkCmdEndRenderPass(commandBuffers[currentFrame].commandBuffer);
 
 
-	VkImage images[4]{};
+	VkImage images[5]{};
 	images[0] = gBufferAlbedoImage.image;
 	images[1] = gBufferNormalImage.image;
 	images[2] = gBufferMaterialImage.image;
-	images[3] = gBufferDepthImage.image;
-	VkImageMemoryBarrier barriers[4]{};
-	for (int i = 0; i < 3; ++i) {
+	images[3] = gBufferPositionImage.image;
+	images[4] = gBufferDepthImage.image;
+	VkImageMemoryBarrier barriers[5]{};
+	for (int i = 0; i < 4; ++i) {
 		barriers[i].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		barriers[i].oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		barriers[i].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -369,19 +371,19 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 		barriers[i].subresourceRange.layerCount = 1;
 	}
 
-	barriers[3].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barriers[3].oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	barriers[3].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	barriers[3].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barriers[3].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barriers[3].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	barriers[3].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	barriers[3].image = images[3];
-	barriers[3].subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-	barriers[3].subresourceRange.baseMipLevel = 0;
-	barriers[3].subresourceRange.levelCount = 1;
-	barriers[3].subresourceRange.baseArrayLayer = 0;
-	barriers[3].subresourceRange.layerCount = 1;
+	barriers[4].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barriers[4].oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	barriers[4].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barriers[4].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barriers[4].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barriers[4].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	barriers[4].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	barriers[4].image = images[4];
+	barriers[4].subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	barriers[4].subresourceRange.baseMipLevel = 0;
+	barriers[4].subresourceRange.levelCount = 1;
+	barriers[4].subresourceRange.baseArrayLayer = 0;
+	barriers[4].subresourceRange.layerCount = 1;
 
 	vkCmdPipelineBarrier(
 		commandBuffers[currentFrame].commandBuffer,
@@ -390,7 +392,7 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 		0,
 		0, nullptr,
 		0, nullptr,
-		4, barriers
+		5, barriers
 	);
 
 
@@ -1018,11 +1020,16 @@ void Renderer::initGBufferResources()
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 	gBufferMaterialImage.initImageView(VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
 
+	gBufferPositionImage.initImage(VK_IMAGE_TYPE_2D, VK_FORMAT_R16G16B16A16_SFLOAT, { swapchain.swapchain.extent.width, swapchain.swapchain.extent.height, 1 },
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+	gBufferPositionImage.initImageView(VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R16G16B16A16_SFLOAT, { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
 	gBufferDepthImage.initImage(VK_IMAGE_TYPE_2D, VK_FORMAT_D32_SFLOAT, { swapchain.swapchain.extent.width, swapchain.swapchain.extent.height, 1 },
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 	gBufferDepthImage.initImageView(VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_D32_SFLOAT, { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 });
 
-	std::vector<VkImageView> gBufferAttachments = { gBufferAlbedoImage.imageView, gBufferNormalImage.imageView, gBufferMaterialImage.imageView, gBufferDepthImage.imageView };
+
+	std::vector<VkImageView> gBufferAttachments = { gBufferAlbedoImage.imageView, gBufferNormalImage.imageView, gBufferMaterialImage.imageView, gBufferPositionImage.imageView, gBufferDepthImage.imageView };
 	gBufferFramebuffer.initFrameBuffer(gBufferAttachments, swapchain.swapchain.extent.width, swapchain.swapchain.extent.height, 1, gBufferRenderPass.renderPass);
 }
 
@@ -1067,23 +1074,41 @@ void Renderer::initGBufferPass()
 	materialAttachmentReference.attachment = 2;
 	materialAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+	VkAttachmentDescription positionAttachment{};
+	positionAttachment.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+	positionAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	positionAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	positionAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	positionAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	positionAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	positionAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference positionAttachmentReference{};
+	positionAttachmentReference.attachment = 3;
+	positionAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
 	VkAttachmentDescription depthAttachment{};
 	depthAttachment.format = VK_FORMAT_D32_SFLOAT;
 	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
 	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentReference depthAttachmentReference{};
-	depthAttachmentReference.attachment = 3;
+	depthAttachmentReference.attachment = 4;
 	depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	std::array<VkAttachmentReference, 3> colorAttachmentsReferences = {
+	
+
+
+	std::array<VkAttachmentReference, 4> colorAttachmentsReferences = {
 		albedoAttachmentReference,
 		normalAttachmentReference,
-		materialAttachmentReference
+		materialAttachmentReference,
+		positionAttachmentReference
 	};
 
 	VkSubpassDescription subpass{};
@@ -1092,7 +1117,7 @@ void Renderer::initGBufferPass()
 	subpass.pColorAttachments = colorAttachmentsReferences.data();
 	subpass.pDepthStencilAttachment = &depthAttachmentReference;
 
-	std::vector<VkAttachmentDescription> attachments = { albedoAttachment, normalAttachment, materialAttachment, depthAttachment };
+	std::vector<VkAttachmentDescription> attachments = { albedoAttachment, normalAttachment, materialAttachment, positionAttachment, depthAttachment };
 	std::vector<VkSubpassDescription> subpasses = { subpass };
 	std::vector<VkSubpassDependency> dependencies = { };
 
@@ -1162,7 +1187,7 @@ void Renderer::initGBufferPipeline()
 	rasterInfo.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterInfo.lineWidth = 1.0f;
 	rasterInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	rasterInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterInfo.depthBiasEnable = VK_FALSE;
 
 	VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
@@ -1178,7 +1203,7 @@ void Renderer::initGBufferPipeline()
 	multisamplingInfo.sampleShadingEnable = VK_FALSE;
 	multisamplingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-	std::array<VkPipelineColorBlendAttachmentState, 3> colorAttachments{};
+	std::array<VkPipelineColorBlendAttachmentState, 4> colorAttachments{};
 	for (auto& colorBlendAttachmentState : colorAttachments) {
 		colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		colorBlendAttachmentState.blendEnable = VK_FALSE;
@@ -1187,7 +1212,7 @@ void Renderer::initGBufferPipeline()
 	VkPipelineColorBlendStateCreateInfo colorBlendInfo{};
 	colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	colorBlendInfo.logicOpEnable = VK_FALSE;
-	colorBlendInfo.attachmentCount = 3;
+	colorBlendInfo.attachmentCount = 4;
 	colorBlendInfo.pAttachments = colorAttachments.data();
 
 

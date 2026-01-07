@@ -49,7 +49,7 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness) {
 
 void main() {
     vec3 N = normalize(fragDir);
-    float roughness = float(push.mipLevel);
+    float roughness = float(push.mipLevel) / float(4.0);
     vec3 prefilteredColor = vec3(0.0);
     float totalWeight = 0.0;
 
