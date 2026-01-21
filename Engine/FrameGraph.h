@@ -1,4 +1,5 @@
 #pragma once
+#include "Helper.h"
 #include <set>
 #include <unordered_set>
 #include "RenderPass.h"

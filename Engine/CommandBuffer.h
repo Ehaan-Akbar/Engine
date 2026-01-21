@@ -1,11 +1,5 @@
 #pragma once
-#include "VkBootstrap.h"
-#include "GLFW/glfw3.h"
-#include <vulkan/vulkan.h>
-#define GLFW_INCLUDE_VULKAN
-#include <string>
 #include "Helper.h"
-#include <stdexcept>
 
 //Add allocation batching for multiple command buffers at once
 

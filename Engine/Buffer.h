@@ -1,12 +1,5 @@
 #pragma once
-#include "GLFW/glfw3.h"
-#include <vulkan/vulkan.h>
-#define GLFW_INCLUDE_VULKAN
-#include <string>
-#include <stdexcept>
 #include "Helper.h"
-#include "vk_mem_alloc.h"
-
 
 
 
@@ -24,6 +17,7 @@ public:
 	void* map();
 	void unmap();
 	void copy(VkDeviceSize size, void* data, VkDeviceSize offset = 0);
+	VkDeviceAddress getDeviceAddress();
 	~Buffer();
 
 protected:

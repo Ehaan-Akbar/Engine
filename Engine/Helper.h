@@ -1,13 +1,28 @@
 #pragma once
+
+#include <Volk/volk.h>
+#include "VkBootstrap.h"
+#include "vk_mem_alloc.h"
+
+#define GLFW_INCLUDE_NONE
+#include "GLFW/glfw3.h"
+
+#define GLM_ENABLE_EXPERIMENTAL
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/hash.hpp>
+
+#include <string>
 #include <iostream>
 #include <functional>
-#include <string>
-#include <vulkan/vulkan.h>
-#include <glm/glm.hpp>
 #include <fstream>
 #include <vector>
-#include "vk_mem_alloc.h"
-#include "VkBootstrap.h"
+#include <stdexcept>
+#include <array>
+
 
 
 static std::vector<char> readFile(const std::string& filename) {

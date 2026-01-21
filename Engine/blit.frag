@@ -26,10 +26,12 @@ layout(push_constant) uniform Push {
 } push;
 
 void main() {
-	vec3 color = texture(lightingImage, fragUV).xyz;
+	vec2 shift = vec2(0.005, 0.0);
+	//vec3 color = vec3(texture(lightingImage, fragUV + shift).r, texture(lightingImage, fragUV).g, texture(lightingImage, fragUV - shift).b); // Chromatic Abberation
+	vec3 color = texture(lightingImage, fragUV).rgb;
 	
 	//color *= 2.0; // Simple exposure adjustment
-	color = color / (color + vec3(1.0)); // Reinhard tone mapping
+	//color = color / (color + vec3(1.0)); // Reinhard tone mapping
 	//color = pow(color, vec3(1.0 / 2.2)); // Gamma correction
 	outColor = vec4(color, 1.0);
 	

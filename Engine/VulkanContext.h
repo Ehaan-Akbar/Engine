@@ -1,4 +1,5 @@
 #pragma once
+#include "Helper.h"
 #include "Window.h"
 #include "Device.h"
 #include "Instance.h"

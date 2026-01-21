@@ -220,7 +220,6 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 	
 
 
-
 	mainVertexBuffer.bind(commandBuffers[currentFrame].commandBuffer);
 	mainIndexBuffer.bind(commandBuffers[currentFrame].commandBuffer);
 
@@ -501,6 +500,140 @@ void Renderer::submit(ECS& ecs, Camera& camera)
 	//Submit
 	commandBuffers[currentFrame].submit(vulkanContext.device.graphicsQueue, inFlightFences[currentFrame], imageAvailableSemaphores[currentFrame], renderFinishedSemaphores[currentFrame]);
 }
+
+void Renderer::submit2(ECS& ecs, Camera& camera)
+{
+	commandBuffers[currentFrame].begin();
+
+	//if (handleResourcesUpload(resourceManager, commandBuffers[currentFrame].commandBuffer)) {
+	//	commandBuffers[currentFrame].end();
+	//	//Submit
+	//	commandBuffers[currentFrame].submit(vulkanContext.device.graphicsQueue, inFlightFences[currentFrame], imageAvailableSemaphores[currentFrame], renderFinishedSemaphores[currentFrame]);
+	//	return;
+	//};
+
+	//Processing scene
+	uint32_t currentVertexOffset = 0;
+	uint32_t currentIndexOffset = 0;
+	uint32_t uboIndex = 0;
+	drawInfos.clear();
+	lightInfos.clear();
+	drawInfos.reserve(ecs.getEntityCount());
+	lightInfos.reserve(ecs.getEntityCount());
+	batchedVertices.clear();
+	batchedIndices.clear();
+
+	ecs.onEachEntity([&](std::shared_ptr<Entity> entity) {
+		const auto& l = ecs.getComponent<Light>(entity);
+		if (l) {
+			lightInfos.push_back({
+				.type = l->type,
+				.direction = l->direction,
+				.position = l->position,
+				.color = l->color
+				});
+			return;
+		}
+		const auto& t = ecs.getComponent<Transform>(entity);
+		const auto& m = ecs.getComponent<Mesh>(entity);
+		const auto& ma = ecs.getComponent<Material>(entity);
+
+		drawInfos.push_back({
+			.indexCount = static_cast<uint32_t>(m->indices->size()),
+			.firstIndex = currentIndexOffset,
+			.vertexOffset = 0,
+			.ssboIndex = uboIndex++,
+			.transform = t,
+			.material = ma
+			});
+
+		batchedVertices.insert(batchedVertices.end(), m->vertices->begin(), m->vertices->end());
+		for (size_t i = 0; i < m->indices->size(); ++i) {
+			batchedIndices.push_back((*m->indices)[i] + currentVertexOffset);
+		}
+		currentVertexOffset += m->vertices->size();
+		currentIndexOffset += m->indices->size();
+		});
+
+	if (!isMainVertexBufferInitialized) {
+		mainVertexBuffer.initVertexBuffer(std::make_shared<Vertices>(batchedVertices), vulkanContext.device.graphicsQueue, graphicsCommandPool.commandPool);
+		mainIndexBuffer.initIndexBuffer(std::make_shared<Indices>(batchedIndices), vulkanContext.device.graphicsQueue, graphicsCommandPool.commandPool);
+		isMainVertexBufferInitialized = true;
+	}
+
+
+
+	mainVertexBuffer.bind(commandBuffers[currentFrame].commandBuffer);
+	mainIndexBuffer.bind(commandBuffers[currentFrame].commandBuffer);
+
+
+	//Updating UBOs and SSBOs
+	descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::GLOBAL_UBO, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, { globalUniformBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
+	descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::OBJECT_SSBO, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, { objectStorageBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
+	descriptorManager.globalDescriptorSet.update(DescriptorManager::GLOBAL_BINDING::LIGHTING_SSBO, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, { lightStorageBuffers[currentFrame].buffer, 0, VK_WHOLE_SIZE });
+
+	//Writing to UBOs and SSBOs
+	{
+		std::vector<objectSSBO> ssbo(1000);
+		for (int i = 0; i < drawInfos.size(); ++i) {
+			auto& drawInfo = drawInfos[i];
+			ssbo[i] = {
+				.model = drawInfo.transform->transformationMatrix(),
+				.albedoIndex = drawInfo.material->albedoIndex,
+				.roughnessIndex = drawInfo.material->roughnessIndex,
+				.normalIndex = drawInfo.material->normalIndex,
+				.occlusionIndex = drawInfo.material->occlusionIndex,
+				.emissiveIndex = drawInfo.material->emissiveIndex
+			};
+
+		}
+
+		/*for (size_t i = 0; i < std::min<size_t>(drawInfos.size(), 8); ++i) {
+			auto& d = drawInfos[i];
+			std::cout << "[SSBO] draw=" << d.ssboIndex
+				<< " albedo=" << d.material->albedoIndex
+				<< " normal=" << d.material->normalIndex
+				<< " roughness=" << d.material->roughnessIndex
+				<< " occlusion=" << d.material->occlusionIndex
+				<< " emissive=" << d.material->emissiveIndex
+				<< "\n";
+		}*/
+
+		objectStorageBuffers[currentFrame].copy(sizeof(objectSSBO) * ssbo.size(), ssbo.data());
+	}
+
+	{
+		std::vector<lightSSBO> ssbo(100);
+		for (int i = 0; i < lightInfos.size(); ++i) {
+			ssbo[i] = {
+				.lightType = glm::vec4(lightInfos[i].type, 0.0f, 0.0f, 0.0f),
+				.lightDir = lightInfos[i].direction,
+				.lightPos = lightInfos[i].position,
+				.lightColor = lightInfos[i].color
+			};
+		}
+
+		lightStorageBuffers[currentFrame].copy(sizeof(lightSSBO) * ssbo.size(), ssbo.data());
+	}
+
+	{
+		globalUBO ubo{
+			.view = camera.getViewMatrix(),
+			.projection = camera.getProjectionMatrix(),
+			.camPos = glm::vec4(camera.position, 0.0f),
+			.dimensions = glm::vec4(static_cast<float>(swapchain.swapchain.extent.width), static_cast<float>(swapchain.swapchain.extent.height), 0.0f, 0.0f),
+			.inverseProjection = camera.getInverseProjectionMatrix(),
+			.inverseView = camera.getInverseViewMatrix(),
+			.numberOfEntities = glm::vec4(drawInfos.size(), lightInfos.size(), 0.0f, 0.0f)
+		};
+
+		globalUniformBuffers[currentFrame].copy(sizeof(ubo), &ubo);
+	}
+
+
+}
+
+
 
 void Renderer::endFrame()
 {
@@ -931,7 +1064,7 @@ void Renderer::initStorageBuffers()
 		lightStorageBuffers.emplace_back(vulkanContext.vulkanResources);
 
 		objectStorageBuffers[i].initStorageBuffer(sizeof(objectSSBO) * 1000);
-		lightStorageBuffers[i].initStorageBuffer(sizeof(lightSSBO) * 10);
+		lightStorageBuffers[i].initStorageBuffer(sizeof(lightSSBO) * 100);
 	}
 	
 }
@@ -1907,6 +2040,161 @@ void Renderer::initPreprocessIBLPipelines()
 		vkDestroyShaderModule(vulkanContext.vulkanResources.device, vertexShaderModule, nullptr);
 		vkDestroyShaderModule(vulkanContext.vulkanResources.device, fragmentShaderModule, nullptr);
 	}
+}
+
+void Renderer::initRayTracingPipeline(VkCommandBuffer commandBuffer)
+{
+	VkAccelerationStructureGeometryTrianglesDataKHR	triangles{};
+	triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+	triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+	triangles.vertexData.deviceAddress = mainVertexBuffer.getDeviceAddress();
+	triangles.vertexStride = sizeof(Vertex);
+	triangles.indexType = VK_INDEX_TYPE_UINT32;
+	triangles.indexData.deviceAddress = mainIndexBuffer.getDeviceAddress();
+
+	VkAccelerationStructureGeometryKHR geometry{};
+	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+	geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+	geometry.geometry.triangles = triangles;
+	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+
+	VkAccelerationStructureBuildGeometryInfoKHR buildInfo{};
+	buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+	buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+	buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+	buildInfo.geometryCount = 1;
+	buildInfo.pGeometries = &geometry;
+
+	VkAccelerationStructureBuildSizesInfoKHR sizeInfo{};
+	sizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+
+	uint32_t primitiveCount = static_cast<uint32_t>(mainIndexBuffer.indexCount / 3);
+
+	vkGetAccelerationStructureBuildSizesKHR(vulkanContext.vulkanResources.device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildInfo, &primitiveCount, &sizeInfo);
+
+	Buffer scratchBuffer{ vulkanContext.vulkanResources };
+	scratchBuffer.initBuffer(sizeInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+
+	Buffer blasBuffer{ vulkanContext.vulkanResources };
+	blasBuffer.initBuffer(sizeInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+
+	VkAccelerationStructureCreateInfoKHR blasAccelerationStructureCreateInfo{};
+	blasAccelerationStructureCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+	blasAccelerationStructureCreateInfo.buffer = blasBuffer.buffer;
+	blasAccelerationStructureCreateInfo.size = sizeInfo.accelerationStructureSize;
+	blasAccelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+
+	VkAccelerationStructureKHR blas;
+	vkCreateAccelerationStructureKHR(vulkanContext.vulkanResources.device, &blasAccelerationStructureCreateInfo, nullptr, &blas);
+
+	buildInfo.dstAccelerationStructure = blas;
+	buildInfo.scratchData.deviceAddress = scratchBuffer.getDeviceAddress();
+
+	VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo{};
+	buildRangeInfo.primitiveCount = primitiveCount;
+
+	const VkAccelerationStructureBuildRangeInfoKHR* ranges[] = { &buildRangeInfo };
+
+	vkCmdBuildAccelerationStructuresKHR(
+		commandBuffer,
+		1,
+		&buildInfo,
+		ranges
+	);
+
+	VkAccelerationStructureDeviceAddressInfoKHR addressInfo{};
+	addressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+	addressInfo.accelerationStructure = blas;
+
+	VkDeviceAddress blasAddress = vkGetAccelerationStructureDeviceAddressKHR(vulkanContext.vulkanResources.device, &addressInfo);
+
+
+	VkAccelerationStructureInstanceKHR instance{};
+	instance.transform = VkTransformMatrixKHR{
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f
+	};
+	instance.instanceCustomIndex = 0;
+	instance.mask = 0xFF;
+	instance.instanceShaderBindingTableRecordOffset = 0;
+	instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+	instance.accelerationStructureReference = blasAddress;
+
+	Buffer instanceBuffer{ vulkanContext.vulkanResources };
+	instanceBuffer.initBuffer(sizeof(VkAccelerationStructureInstanceKHR), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+	instanceBuffer.copy(sizeof(VkAccelerationStructureInstanceKHR), &instance);
+
+	VkAccelerationStructureGeometryInstancesDataKHR instancesData{};
+	instancesData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+	instancesData.arrayOfPointers = VK_FALSE;
+	instancesData.data.deviceAddress = instanceBuffer.getDeviceAddress();
+
+	VkAccelerationStructureGeometryKHR tlasGeometry{};
+	tlasGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+	tlasGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+	tlasGeometry.geometry.instances = instancesData;
+
+	VkAccelerationStructureBuildGeometryInfoKHR tlasBuildInfo{};
+	tlasBuildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+	tlasBuildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+	tlasBuildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+	tlasBuildInfo.geometryCount = 1;
+	tlasBuildInfo.pGeometries = &tlasGeometry;
+
+	uint32_t instanceCount = 1;
+	VkAccelerationStructureBuildSizesInfoKHR tlasSizeInfo{};
+	tlasSizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+
+	vkGetAccelerationStructureBuildSizesKHR(vulkanContext.vulkanResources.device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &tlasBuildInfo, &instanceCount, &tlasSizeInfo);
+
+	Buffer tlasScratchBuffer{ vulkanContext.vulkanResources };
+	tlasScratchBuffer.initBuffer(tlasSizeInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+
+	Buffer tlasBuffer{ vulkanContext.vulkanResources };
+	tlasBuffer.initBuffer(tlasSizeInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+
+	VkAccelerationStructureCreateInfoKHR tlasAccelerationStructureCreateInfo{};
+	tlasAccelerationStructureCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+	tlasAccelerationStructureCreateInfo.buffer = tlasBuffer.buffer;
+	tlasAccelerationStructureCreateInfo.size = tlasSizeInfo.accelerationStructureSize;
+	tlasAccelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+
+	VkAccelerationStructureKHR tlas;
+	vkCreateAccelerationStructureKHR(vulkanContext.vulkanResources.device, &tlasAccelerationStructureCreateInfo, nullptr, &tlas);
+
+	tlasBuildInfo.dstAccelerationStructure = tlas;
+	tlasBuildInfo.scratchData.deviceAddress = tlasScratchBuffer.getDeviceAddress();
+
+	VkAccelerationStructureBuildRangeInfoKHR tlasBuildRangeInfo{};
+	tlasBuildRangeInfo.primitiveCount = instanceCount;
+
+	const VkAccelerationStructureBuildRangeInfoKHR* tlasRanges[] = { &tlasBuildRangeInfo };
+
+	vkCmdBuildAccelerationStructuresKHR(
+		commandBuffer,
+		1,
+		&tlasBuildInfo,
+		tlasRanges
+	);
+
+	VkMemoryBarrier memoryBarrier{};
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+	memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+	memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+
+	vkCmdPipelineBarrier(
+		commandBuffer,
+		VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+		VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
+		0,
+		1,
+		&memoryBarrier,
+		0,
+		nullptr,
+		0,
+		nullptr
+	);
 }
 
 void Renderer::initSwapchainResources()

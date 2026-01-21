@@ -184,6 +184,9 @@
     <Filter Include="Resource Files\Shaders\Skybox\Preprocessing\BRDF-LUT">
       <UniqueIdentifier>{ed848729-bc86-4f45-949b-20f3b7ba89f4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Vulkan\Helper">
+      <UniqueIdentifier>{a43fb343-032e-44b8-a444-30bf357a2657}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="VkBootstrap.cpp">
@@ -224,9 +227,6 @@
     </ClCompile>
     <ClCompile Include="VertexBuffer.cpp">
       <Filter>Source Files\Vulkan\Abstractions\Buffer\VertexBuffer</Filter>
-    </ClCompile>
-    <ClCompile Include="vk_mem_alloc.cpp">
-      <Filter>Source Files\Libraries\Vulkan Memory Allocator</Filter>
     </ClCompile>
     <ClCompile Include="Renderer.cpp">
       <Filter>Source Files\Vulkan\Renderer</Filter>
@@ -309,11 +309,11 @@
     <ClCompile Include="json.cpp">
       <Filter>Source Files\Libraries\Json</Filter>
     </ClCompile>
+    <ClCompile Include="vol_vma_vkb_impl.cpp">
+      <Filter>Source Files\Vulkan\Helper</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Helper.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="VkBootstrap.h">
       <Filter>Source Files\Libraries\VkBootstrap</Filter>
     </ClInclude>
@@ -439,6 +439,9 @@
     </ClInclude>
     <ClInclude Include="json.hpp">
       <Filter>Source Files\Libraries\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="Helper.h">
+      <Filter>Source Files\Vulkan\Helper</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

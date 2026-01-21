@@ -66,6 +66,16 @@ void Buffer::copy(VkDeviceSize size, void* data, VkDeviceSize offset)
 	vmaUnmapMemory(vulkanResources.allocator, allocation);
 }
 
+VkDeviceAddress Buffer::getDeviceAddress()
+{
+	VkBufferDeviceAddressInfo info{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+		.pNext = nullptr,
+		.buffer = buffer
+	};
+	return vkGetBufferDeviceAddress(vulkanResources.device, &info);
+}
+
 Buffer::~Buffer()
 {
 	destroyBuffer();

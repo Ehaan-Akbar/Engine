@@ -37,6 +37,7 @@
 #include "StagingBuffer.h"
 
 
+
 struct MAX_RESOURCE_COUNT {
 	static const uint32_t UNIFORM_BUFFER = 16;
 	static const uint32_t COMBINED_IMAGE_SAMPLER_TEXTURE = 16;
@@ -111,6 +112,7 @@ public:
 
 	bool beginFrame();
 	void submit(ECS& ecs, Camera& camera);
+	void submit2(ECS& ecs, Camera& camera);
 	void endFrame();
 
 	bool preprocess(ResourceManager& resourceManager);
@@ -221,8 +223,11 @@ private:
 	void initPreprocessIBLResources();
 	void initPreprocessIBLPasses();
 	void initPreprocessIBLPipelines();
-
 	//IBL
+
+	//Ray Tracing
+	void initRayTracingPipeline(VkCommandBuffer commandBuffer);
+	//Ray Tracing
 
 	DescriptorManager descriptorManager{ vulkanContext.vulkanResources };
 

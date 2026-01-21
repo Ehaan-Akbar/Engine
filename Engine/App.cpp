@@ -146,13 +146,16 @@ void App::run()
 	{ 0.30f, 0.30f, 0.30f }  // dim neutral
 	};
 
+	//std::reverse(lightPositions.begin(), lightPositions.end());
+	//std::reverse(lightColors.begin(), lightColors.end());
+
 	for (int i = 0; i < 20; ++i) {
 		std::shared_ptr<Entity> lightEntity = std::make_shared<Entity>();
 		std::shared_ptr<Light> lightComp = std::make_shared<Light>();
 		ecs->addEntity(lightEntity)->addComponent<Light>(lightEntity, lightComp);
 
 		lightComp->type = Light::POINT;
-		lightComp->color = glm::vec4(lightColors[i], 2.0);
+		lightComp->color = glm::vec4(lightColors[i], 5.0);
 		lightComp->position = glm::vec4(lightPositions[i] * glm::vec3(-1.0, 1.0, -1.0), 1.0f);
 	}
 
@@ -172,6 +175,14 @@ void App::run()
 		preprocessing = renderer->preprocess(*resourceManager);
 	}
 	//so when its done, loop stops and we go to main loop
+
+	std::shared_ptr<Entity> cameraLightEntity = std::make_shared<Entity>();
+	std::shared_ptr<Light> cameraLightComp = std::make_shared<Light>();
+	//ecs->addEntity(cameraLightEntity)->addComponent<Light>(cameraLightEntity, cameraLightComp);
+
+	cameraLightComp->type = Light::POINT;
+	cameraLightComp->color = glm::vec4(1.0, 1.0, 1.0, 5.0);
+	cameraLightComp->position = glm::vec4(camera->position, 1.0);
 
 	while (!glfwWindowShouldClose(window->getWindow())) {
 
@@ -206,6 +217,8 @@ void App::run()
 		lightComponent1->color.x = glm::cos(t / 1000) / 2 + 0.5;
 		lightComponent1->color.y = glm::sin(t / 1000) / 2 + 0.5;
 		lightComponent1->color.z = glm::cos(t / 1000) / 2 + 0.5;*/
+
+		cameraLightComp->position = glm::vec4(camera->position, 5.0);
 
 		
 		//vkDeviceWaitIdle(context->vulkanResources.device);

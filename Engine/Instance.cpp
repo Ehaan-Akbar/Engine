@@ -21,7 +21,7 @@ void Instance::initInstance(std::string title)
 #ifndef NDEBUG
 		.request_validation_layers(true)
 #endif
-	.set_engine_name("Game Engine idk bro").require_api_version(1, 0, 0).build();
+	.set_engine_name("Game Engine idk bro").require_api_version(1, 3, 0).build();
 
 
 	if (!instanceReturn) {
