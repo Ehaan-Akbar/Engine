@@ -1140,9 +1140,9 @@ void Renderer::initSampler()
 
 void Renderer::initGBufferResources()
 {
-	gBufferAlbedoImage.initImage(VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, { swapchain.swapchain.extent.width, swapchain.swapchain.extent.height, 1 },
+	gBufferAlbedoImage.initImage(VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_SRGB, { swapchain.swapchain.extent.width, swapchain.swapchain.extent.height, 1 },
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-	gBufferAlbedoImage.initImageView(VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+	gBufferAlbedoImage.initImageView(VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8A8_SRGB, { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
 
 	gBufferNormalImage.initImage(VK_IMAGE_TYPE_2D, VK_FORMAT_R16G16B16A16_SFLOAT, { swapchain.swapchain.extent.width, swapchain.swapchain.extent.height, 1 },
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
@@ -1169,7 +1169,7 @@ void Renderer::initGBufferResources()
 void Renderer::initGBufferPass()
 {
 	VkAttachmentDescription albedoAttachment{};
-	albedoAttachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+	albedoAttachment.format = VK_FORMAT_R8G8B8A8_SRGB;
 	albedoAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	albedoAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	albedoAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -2044,6 +2044,10 @@ void Renderer::initPreprocessIBLPipelines()
 
 void Renderer::initRayTracingPipeline(VkCommandBuffer commandBuffer)
 {
+	rayTracingImage.initImage(VK_IMAGE_TYPE_2D, VK_FORMAT_R32G32B32A32_SFLOAT, { swapchain.swapchain.extent.width, swapchain.swapchain.extent.height, 1 }, 
+		VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+	rayTracingImage.initImageView(VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R32G32B32A32_SFLOAT, { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
 	VkAccelerationStructureGeometryTrianglesDataKHR	triangles{};
 	triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 	triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
@@ -2051,6 +2055,7 @@ void Renderer::initRayTracingPipeline(VkCommandBuffer commandBuffer)
 	triangles.vertexStride = sizeof(Vertex);
 	triangles.indexType = VK_INDEX_TYPE_UINT32;
 	triangles.indexData.deviceAddress = mainIndexBuffer.getDeviceAddress();
+	triangles.maxVertex = mainVertexBuffer.vertexCount;
 
 	VkAccelerationStructureGeometryKHR geometry{};
 	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
@@ -2075,7 +2080,6 @@ void Renderer::initRayTracingPipeline(VkCommandBuffer commandBuffer)
 	Buffer scratchBuffer{ vulkanContext.vulkanResources };
 	scratchBuffer.initBuffer(sizeInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
-	Buffer blasBuffer{ vulkanContext.vulkanResources };
 	blasBuffer.initBuffer(sizeInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
 	VkAccelerationStructureCreateInfoKHR blasAccelerationStructureCreateInfo{};
@@ -2084,7 +2088,6 @@ void Renderer::initRayTracingPipeline(VkCommandBuffer commandBuffer)
 	blasAccelerationStructureCreateInfo.size = sizeInfo.accelerationStructureSize;
 	blasAccelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 
-	VkAccelerationStructureKHR blas;
 	vkCreateAccelerationStructureKHR(vulkanContext.vulkanResources.device, &blasAccelerationStructureCreateInfo, nullptr, &blas);
 
 	buildInfo.dstAccelerationStructure = blas;
@@ -2107,6 +2110,24 @@ void Renderer::initRayTracingPipeline(VkCommandBuffer commandBuffer)
 	addressInfo.accelerationStructure = blas;
 
 	VkDeviceAddress blasAddress = vkGetAccelerationStructureDeviceAddressKHR(vulkanContext.vulkanResources.device, &addressInfo);
+
+	VkMemoryBarrier blasMemoryBarrier{};
+	blasMemoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+	blasMemoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+	blasMemoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+
+	vkCmdPipelineBarrier(
+		commandBuffer,
+		VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+		VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+		0,
+		1,
+		&blasMemoryBarrier,
+		0,
+		nullptr,
+		0,
+		nullptr
+	);
 
 
 	VkAccelerationStructureInstanceKHR instance{};
@@ -2151,7 +2172,6 @@ void Renderer::initRayTracingPipeline(VkCommandBuffer commandBuffer)
 	Buffer tlasScratchBuffer{ vulkanContext.vulkanResources };
 	tlasScratchBuffer.initBuffer(tlasSizeInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
-	Buffer tlasBuffer{ vulkanContext.vulkanResources };
 	tlasBuffer.initBuffer(tlasSizeInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
 	VkAccelerationStructureCreateInfoKHR tlasAccelerationStructureCreateInfo{};
@@ -2160,7 +2180,6 @@ void Renderer::initRayTracingPipeline(VkCommandBuffer commandBuffer)
 	tlasAccelerationStructureCreateInfo.size = tlasSizeInfo.accelerationStructureSize;
 	tlasAccelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 
-	VkAccelerationStructureKHR tlas;
 	vkCreateAccelerationStructureKHR(vulkanContext.vulkanResources.device, &tlasAccelerationStructureCreateInfo, nullptr, &tlas);
 
 	tlasBuildInfo.dstAccelerationStructure = tlas;
@@ -2195,6 +2214,8 @@ void Renderer::initRayTracingPipeline(VkCommandBuffer commandBuffer)
 		0,
 		nullptr
 	);
+
+
 }
 
 void Renderer::initSwapchainResources()

@@ -28,14 +28,19 @@ layout(push_constant) uniform Push {
 void main() {
 	vec2 shift = vec2(0.005, 0.0);
 	//vec3 color = vec3(texture(lightingImage, fragUV + shift).r, texture(lightingImage, fragUV).g, texture(lightingImage, fragUV - shift).b); // Chromatic Abberation
+
 	vec3 color = texture(lightingImage, fragUV).rgb;
-	
-	//color *= 2.0; // Simple exposure adjustment
-	//color = color / (color + vec3(1.0)); // Reinhard tone mapping
-	//color = pow(color, vec3(1.0 / 2.2)); // Gamma correction
+
+
+	color *= 1.1; // Exposure
+	color = (color - 0.5) * 1.02 + 0.5; // Contrast
+	float luma = dot(color, vec3(0.299, 0.587, 0.114));
+	color = mix(vec3(luma), color, 1.2); // Saturation
+
+
+
+
 	outColor = vec4(color, 1.0);
-	
-	
 	//outColor = texture(materialImage, fragUV);
 	//outColor = vec4(texture(lutMap, fragUV).xy, 0.0, 0.0);
 	//outColor = texture(positionImage, fragUV);

@@ -295,9 +295,10 @@ void main() {
 
     
 
-    vec3 direct = albedo * (ambient + diffuseStrength*diffuse + specularStrength*specular);
+    vec3 direct = albedo * (diffuseStrength*diffuse + specularStrength*specular);
     vec3 indirect = color;
-    outColor = vec4(direct + 0.05*indirect, 1.0);
+
+    outColor = vec4(direct + indirect, 1.0);
 
     //debug views
     //fragPos = vec3(-100, 0, 0);

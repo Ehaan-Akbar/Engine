@@ -18,7 +18,7 @@ App::App()
 	ecs = new ECS();
 	//ecs->addEntity(entity1)->addComponent<Transform>(entity1, transformComponent1)->addComponent<Mesh>(entity1, meshComponent1)->addComponent<Material>(entity1, materialComponent1);
 	ecs->addEntity(entity2)->addComponent<Transform>(entity2, transformComponent2)->addComponent<Mesh>(entity2, meshComponent2)->addComponent<Material>(entity2, materialComponent2);
-	ecs->addEntity(light1)->addComponent<Light>(light1, lightComponent1);
+	//ecs->addEntity(light1)->addComponent<Light>(light1, lightComponent1);
 
 	resourceManager = new ResourceManager();
 
@@ -31,13 +31,13 @@ void App::run()
 {
 	auto vikingRoom = resourceManager->loadOBJ("viking_room.obj.txt");
 	auto plane = resourceManager->loadOBJ("plane.obj");
-	auto damagedHelmet = resourceManager->loadGLTF("../Assets/Sponza/scene.gltf");
+	auto damagedHelmet = resourceManager->loadGLTF("../Assets/DamagedHelmet/scene.gltf");
 
 
 	auto t1 = resourceManager->createImage("viking_room.png", ResourceManager::TEXTURES);
 	resourceManager->loadTexture(t1);
 
-	auto skybox = resourceManager->createImage("../Assets/CityBox/CityBox", ResourceManager::CUBE_MAP);
+	auto skybox = resourceManager->createImage("../Assets/HouseBox/HouseBox", ResourceManager::CUBE_MAP);
 	resourceManager->loadCubeMap(skybox);
 
 	//auto skybox2 = resourceManager->createImage("../Assets/HouseBox/HouseBox", ResourceManager::CUBE_MAP);
@@ -57,7 +57,7 @@ void App::run()
 
 		transform->position = { 0.0f, 0.0f, 0.0f };
 		//transform->scale = { 0.1f, 0.1f, 0.1f };
-		transform->rotation.x = 0*glm::pi<float>() / 2;
+		transform->rotation.x = glm::pi<float>() / 2;
 		transform->rotation.y = glm::pi<float>();
 
 		mesh->vertices = damagedHelmet[i]->vertices;
@@ -152,7 +152,7 @@ void App::run()
 	for (int i = 0; i < 20; ++i) {
 		std::shared_ptr<Entity> lightEntity = std::make_shared<Entity>();
 		std::shared_ptr<Light> lightComp = std::make_shared<Light>();
-		ecs->addEntity(lightEntity)->addComponent<Light>(lightEntity, lightComp);
+		//ecs->addEntity(lightEntity)->addComponent<Light>(lightEntity, lightComp);
 
 		lightComp->type = Light::POINT;
 		lightComp->color = glm::vec4(lightColors[i], 5.0);

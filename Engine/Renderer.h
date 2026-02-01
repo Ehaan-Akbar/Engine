@@ -226,6 +226,14 @@ private:
 	//IBL
 
 	//Ray Tracing
+	VkAccelerationStructureKHR blas;
+	VkAccelerationStructureKHR tlas;
+
+	Buffer blasBuffer{ vulkanContext.vulkanResources };
+	Buffer tlasBuffer{ vulkanContext.vulkanResources };
+
+	Image rayTracingImage{ vulkanContext.vulkanResources };
+
 	void initRayTracingPipeline(VkCommandBuffer commandBuffer);
 	//Ray Tracing
 
