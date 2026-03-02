@@ -20,10 +20,10 @@ As this project is still under active development, the following roadmap contain
  - Ray Tracing (DDGI)
  - Codebase Cleanup
 
-## Screenshots
+## Demo
 <img width="1980" height="1177" alt="Screenshot 2026-01-31 232054" src="https://github.com/user-attachments/assets/7bbb9651-100d-423d-b62d-1229efb58a47" />
 <img width="1962" height="1175" alt="Screenshot 2026-01-20 210435" src="https://github.com/user-attachments/assets/5e915a54-b476-4780-b371-20d1d1311424" />
-https://github.com/user-attachments/assets/accf3cd2-a26c-4821-b3a4-ff00f6906492
+**Video**: https://github.com/user-attachments/assets/accf3cd2-a26c-4821-b3a4-ff00f6906492
 
 
 
