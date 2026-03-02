@@ -1,0 +1,102 @@
+#pragma once
+#include "../../Vulkan/Helper/Helper.h"
+#include "../../Libraries/StbImage/stb_image.h"
+#include "../../Libraries/TinyOBJLoader/tiny_obj_loader.h"
+#include "../../Libraries/TinyGLTF/tiny_gltf.h"
+#include <unordered_map>
+#include <vector>
+#include <queue>
+#include <array>
+#include "../ECS/Component/Component.h"
+#include "../../Vulkan/Abstractions/Buffer/VertexBuffer/VertexBuffer.h"
+#include "../../Vulkan/Abstractions/Buffer/IndexBuffer/IndexBuffer.h"
+#include <cstring>
+
+
+class ResourceManager
+{
+public:
+
+	struct MeshResource {
+		std::shared_ptr<Vertices> vertices = std::make_shared<Vertices>();
+		std::shared_ptr<Indices> indices = std::make_shared<Indices>();
+		
+		uint32_t textureIndex;
+		uint32_t albedoIndex;
+		uint32_t roughnessIndex;
+		uint32_t normalIndex;
+		uint32_t occlusionIndex;
+		uint32_t emissiveIndex;
+	};
+
+	enum ResourceType {
+		TEXTURES = 0,
+		CUBE_MAP = 1,
+	};
+
+	enum ResourceState {
+		UNLOADED = 0,
+		LOADING = 1,
+		LOADED = 2,
+		FAILED = 3
+	};
+
+private:
+	struct ImageLayer {
+		int width, height;
+		stbi_uc* pixels;
+	};
+
+	struct ImageResource {
+		//Implicitly assumed texture = 1 array layer, cubemap = 6 array layers
+		ResourceType type;
+		ResourceState cpuState = ResourceState::UNLOADED;
+		ResourceState gpuState = ResourceState::UNLOADED;
+
+		std::string path;
+		std::vector<ImageLayer> layers;
+
+		uint32_t refCount = 0;
+		uint32_t id;
+
+		void setGPUState(ResourceState state) {
+			gpuState = state;
+		}
+
+		uint32_t getID() {
+			return id;
+		}
+
+		~ImageResource() {
+			free();
+		}
+
+		void free() {
+			for (auto& layer : layers) {
+				stbi_image_free(layer.pixels);
+			}
+		}
+	};
+
+public:
+
+	ResourceManager();
+	std::shared_ptr<ImageResource> createImage(std::string&& path, ResourceType type);
+	std::shared_ptr<MeshResource> loadOBJ(const std::string&& file);
+	std::vector<std::shared_ptr<MeshResource>> loadGLTF(const std::string&& file);
+	void loadTexture(std::shared_ptr<ImageResource> imageResource);
+	void loadTexture(std::shared_ptr<ImageResource> imageResource, stbi_uc* pixels, int width, int height);
+	void loadCubeMap(std::shared_ptr<ImageResource> imageResource);
+	~ResourceManager();
+
+	
+
+	std::queue<std::shared_ptr<ImageResource>> uploadQueue;
+
+private:
+
+	std::array<std::vector<std::shared_ptr<ImageResource>>, 2> images;
+
+	std::array<uint32_t, 2> idCounters;
+};
+
